@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string("first_name", 80);
             $table->string("last_name", 80);
             $table->string("email", 255)->unique();
-            $table->string("phone", 30)->nullable();
+            $table->string("phone", 30)->nullable(); 
             $table->string("password", 255);
             $table->string("delivery_address")->nullable();
             $table->boolean("is_active")->default(true);
