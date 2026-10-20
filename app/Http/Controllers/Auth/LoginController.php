@@ -24,14 +24,14 @@ class LoginController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt($credentials + ['is_active' => true], $request->boolean('remember'))) {
+        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             return back()->withErrors([
                 'email' => "Identifiants incorrects.",
             ])->onlyInput('email');
         }
 
         $request->session()->regenerate();
-        return redirect()->intended(route('home'));
+        return redirect()->intended(route('dashboard'));
     }
 
     /*déconnecter l'utilisateur, invalide la session
@@ -39,8 +39,6 @@ class LoginController extends Controller
     public function destroy(Request $request) {
         Auth::logout();
         $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return redirect()->route('login');
+        $request->session()->regenerateToken(); 
     }
 }

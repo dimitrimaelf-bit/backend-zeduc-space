@@ -12,11 +12,11 @@
             <form method="POST" action="{{ route('password.update') }}">
                 @csrf
                 <!-- Token caché -->
-                <input type="hidden" name="token" value="{{ $token }}">
+                <input type="hidden" name="token" value="{{ $request->route('token') }}">
                 <!-- Email -->
                 <div class="mb-3">
                     <label for="email" class="form-label text-light small mb-2">Adresse e-mail</label>
-                    <input id="email" name="email" type="email" required value="{{ old('email', $email) }}"
+                    <input id="email" name="email" type="email" required value="{{ old('email', $request->email) }}"
                         class="form-control bg-transparent text-white border-secondary shadow-none py-2" style="border-color: #333 !important;">
                     @error('email')
                         <div class="text-danger small mt-2">{{ $message }}</div>

@@ -1,77 +1,96 @@
-@extends('layouts.admin')
+@extends('layouts.mmm')
 
-@section('title', 'Gestion du Menu - Mon Miam Miam')
+@section('titre', 'Gestion du menu - ZeDuc@Space')
 
-@section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold text-dark mb-0">Carte & Plats du Menu</h3>
-    <a href="{{ route('admin.menu.create') }}" class="btn btn-brand">
-        <i class="fa-solid fa-plus me-1"></i> Ajouter un Plat
-    </a>
-</div>
+@section('contenu')
+<div class="menu-wrapper">
 
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1 class="font-serif fw-bold text-dark mb-1" style="font-size: 32px; font-family: Georgia, serif;">Gestion du menu</h1>
+            <p class="text-muted mb-0" style="font-size: 14px;">Créez, modifiez ou supprimez les plats et boissons du menu</p>
+        </div>
+        <button class="btn text-white px-3 py-2 fw-medium shadow-sm" style="background-color: #b89d68; border-radius: 8px; font-size: 14px;">
+            + Ajouter un plat
+        </button>
+    </div>
+
+    <!-- Barre de recherche -->
+    <div class="card border-0 shadow-sm rounded-3 p-2 bg-white mb-4">
+        <div class="input-group border-0">
+            <span class="input-group-text bg-transparent border-0 text-muted"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control border-0 bg-transparent shadow-none" placeholder="Rechercher un plat (nom, catégorie...)" style="font-size: 13.5px;">
+        </div>
+    </div>
+
+    <!-- Tableau de liste -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden bg-white mb-4">
+        <div class="p-3 border-bottom">
+            <h5 class="fw-bold mb-0" style="font-family: Georgia, serif;">Liste des plats et boissons</h5>
+        </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col" class="ps-4">Image</th>
-                        <th scope="col">Nom du Plat</th>
-                        <th scope="col">Catégorie</th>
-                        <th scope="col">Prix</th>
-                        <th scope="col">Statut</th>
-                        <th scope="col" class="text-center">Actions</th>
+            <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                <thead class="bg-light text-muted">
+                    <tr style="font-size: 12px;">
+                        <th class="py-3 px-4">Nom du plat / boisson</th>
+                        <th class="py-3 px-3">Catégorie</th>
+                        <th class="py-3 px-3">Prix</th>
+                        <th class="py-3 px-3">Statut</th>
+                        <th class="py-3 px-4 text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($menuItems as $item)
-                        <tr>
-                            <td class="ps-4">
-                                @if($item->image)
-                                    <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->name }}" class="rounded" width="50" height="50" style="object-fit: cover;">
-                                @else
-                                    <div class="bg-light rounded d-flex align-items-center justify-content-center text-muted" style="width: 50px; height: 50px;">
-                                        <i class="fa-solid fa-utensils"></i>
-                                    </div>
-                                @endif
-                            </td>
-                            <td class="fw-semibold">{{ $item->name }}</td>
-                            <td><span class="badge bg-secondary">{{ $item->category->name ?? 'Non classé' }}</span></td>
-                            <td class="fw-bold text-success">{{ number_format($item->price, 0, ',', ' ') }} FCFA</td>
-                            <td>
-                                @if($item->is_available)
-                                    <span class="badge bg-success-subtle text-success border border-success">Disponible</span>
-                                @else
-                                    <span class="badge bg-danger-subtle text-danger border border-danger">Indisponible</span>
-                                @endif
-                            </td>
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-2">
-                                    <a href="{{ route('admin.menu.edit', $item) }}" class="btn btn-sm btn-outline-warning" title="Modifier">
-                                        <i class="fa-solid fa-pen"></i>
-                                    </a>
-                                    <form action="{{ route('admin.menu.destroy', $item) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce plat ?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </form>
+                    <tr class="border-bottom">
+                        <td class="py-3 px-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 bg-secondary-subtle" style="width: 50px; height: 50px; background-size: cover; background-position: center; background-image: url('https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=150&q=80');"></div>
+                                <div>
+                                    <strong class="d-block text-dark">Plat de résistance</strong>
+                                    <small class="text-muted">Poulet braisé entier</small>
                                 </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
-                                <i class="fa-solid fa-utensils fs-3 d-block mb-2"></i>
-                                Aucun plat enregistré au menu.
-                            </td>
-                        </tr>
-                    @endforelse
+                            </div>
+                        </td>
+                        <td class="py-3 px-3 text-muted">Plats principaux</td>
+                        <td class="py-3 px-3 fw-medium">7 500 FCFA</td>
+                        <td class="py-3 px-3"><span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">● Disponible</span></td>
+                        <td class="py-3 px-4 text-end">
+                            <button class="btn btn-light btn-sm me-1"><i class="bi bi-trash"></i></button>
+                            <button class="btn btn-sm text-white px-3" style="background-color: #b89d68;">Modifier</button>
+                        </td>
+                    </tr>
+                    <tr class="border-bottom">
+                        <td class="py-3 px-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 bg-secondary-subtle" style="width: 50px; height: 50px; background-size: cover; background-position: center; background-image: url('https://images.unsplash.com/photo-1546171753-97d7676e4602?auto=format&fit=crop&w=150&q=80');"></div>
+                                <div>
+                                    <strong class="d-block text-dark">Boisson</strong>
+                                    <small class="text-muted">Jus de Bissap</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3 px-3 text-muted">Boissons</td>
+                        <td class="py-3 px-3 fw-medium">1 500 FCFA</td>
+                        <td class="py-3 px-3"><span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">● Disponible</span></td>
+                        <td class="py-3 px-4 text-end">
+                            <button class="btn btn-light btn-sm me-1"><i class="bi bi-trash"></i></button>
+                            <button class="btn btn-sm text-white px-3" style="background-color: #b89d68;">Modifier</button>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
+        <div class="d-flex justify-content-between align-items-center p-3 border-top text-muted" style="font-size: 12px;">
+            <span>Affichage de 1 à 6 sur 15 éléments</span>
+            <div class="btn-group">
+                <button class="btn btn-sm btn-outline-secondary disabled">Previous</button>
+                <button class="btn btn-sm btn-secondary" style="background-color: #b89d68; border-color: #b89d68;">1</button>
+                <button class="btn btn-sm btn-outline-secondary">2</button>
+                <button class="btn btn-sm btn-outline-secondary">3</button>
+                <button class="btn btn-sm btn-outline-secondary">Next</button>
+            </div>
+        </div>
     </div>
+
 </div>
 @endsection

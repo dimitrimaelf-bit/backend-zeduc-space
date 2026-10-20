@@ -10,14 +10,12 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        // Déclare l'alias "role" utilisé dans routes/web.php : ->middleware('role:student')
+    ->withMiddleware(function (Middleware $middleware) {
+        // Déclaration de l'alias pour notre middleware admin
         $middleware->alias([
-            'role' => \App\Http\Middleware\EnsureRole::class,
+            'admin' => \App\Http\Middleware\EnsureIsAdmin::class,
         ]);
-
     })
-
-    ->withExceptions(function (Exceptions $exceptions): void {
+    ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
