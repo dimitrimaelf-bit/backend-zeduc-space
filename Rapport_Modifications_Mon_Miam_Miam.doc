@@ -1,0 +1,108 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+    <meta charset="utf-8">
+    <title>Rapport de Modifications - Mon Miam Miam</title>
+    <style>
+        body { font-family: 'Calibri', sans-serif; font-size: 11pt; color: #222; line-height: 1.4; }
+        h1 { font-size: 18pt; color: #1a1a1a; border-bottom: 2px solid #cfc096; padding-bottom: 6px; }
+        h2 { font-size: 14pt; color: #5c4b23; margin-top: 18px; }
+        h3 { font-size: 12pt; color: #333; margin-top: 12px; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th { background-color: #1a1a1a; color: #cfc096; font-weight: bold; text-align: left; padding: 8px; border: 1px solid #ccc; font-size: 10pt; }
+        td { padding: 8px; border: 1px solid #ccc; font-size: 10pt; vertical-align: top; }
+        code { font-family: 'Consolas', monospace; background-color: #f4f1ea; padding: 2px 4px; font-size: 9.5pt; }
+        .meta { background-color: #f6f1e7; padding: 10px; border-left: 4px solid #cfc096; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>RAPPORT DE SUIVI TECHNIQUE — PROJET « MON MIAM MIAM »</h1>
+    <div class="meta">
+        <strong>Établissement :</strong> Institut UCAC-ICAM<br>
+        <strong>Application :</strong> Plateforme de restauration ZeDuc@Space (Espace Étudiant)<br>
+        <strong>Stack Technique :</strong> Laravel 12.70.0, PHP 8.2, MySQL, Bootstrap 5.0.2<br>
+        <strong>Date :</strong> 20 Octobre 2026
+    </div>
+
+    <h2>1. Configuration de l'Environnement (.env) et Base de Données</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Élément</th>
+                <th>Problème rencontré</th>
+                <th>Modification apportée</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>APP_KEY</code></td>
+                <td>Erreur <code>MissingAppKeyException</code> au chargement de <code>/register</code>.</td>
+                <td>Génération de la clé de chiffrement via <code>php artisan key:generate</code>.</td>
+            </tr>
+            <tr>
+                <td><code>SESSION_DRIVER</code></td>
+                <td>Erreur SQL <code>1146 Table 'mon_miam_miam.sessions' doesn't exist</code>.</td>
+                <td>Passage de <code>database</code> à <code>file</code> dans le fichier <code>.env</code>.</td>
+            </tr>
+            <tr>
+                <td><code>CACHE_STORE</code></td>
+                <td>Erreur SQL <code>1146 Table 'mon_miam_miam.cache' doesn't exist</code>.</td>
+                <td>Passage de <code>database</code> à <code>file</code> dans le fichier <code>.env</code>.</td>
+            </tr>
+            <tr>
+                <td>Table <code>users</code></td>
+                <td>Erreur SQL <code>1054 Unknown column 'password' in 'field list'</code>.</td>
+                <td>Renommage de la colonne <code>password_hash</code> en <code>password</code> dans MySQL.</td>
+            </tr>
+            <tr>
+                <td>Modèle <code>Promotion.php</code></td>
+                <td>Faute de frappe <code>const CREATED_AT = "creted_at"</code>.</td>
+                <td>Correction en <code>created_at</code> pour correspondre à la table SQL.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>2. Corrections des Contrôleurs et du Routage</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Fichier</th>
+                <th>Action réalisée</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>AccueilController.php</code></td>
+                <td>Renommage du fichier <code>AcceuilController.php</code> en <code>AccueilController.php</code> (conformité PSR-4).</td>
+            </tr>
+            <tr>
+                <td><code>CookieController.php</code></td>
+                <td>Renommage de <code>CookiesController.php</code> en <code>CookieController.php</code> et ajout de la route <code>cookies.store</code>.</td>
+            </tr>
+            <tr>
+                <td><code>ParrainageController.php</code></td>
+                <td>Renommage de <code>Parrainage.php</code> en <code>ParrainageController.php</code> et déclaration des routes POST de génération et d'utilisation de code.</td>
+            </tr>
+            <tr>
+                <td><code>LoyaltyController.php</code></td>
+                <td>Mise à jour de <code>index()</code> pour envoyer à la vue le solde, les transactions de points, le code parrain et la liste des filleuls.</td>
+            </tr>
+            <tr>
+                <td><code>ReclamationController.php</code></td>
+                <td>Mise à jour de <code>index()</code> pour fournir <code>$user</code>, <code>$balance</code>, <code>$orders</code> et <code>$claims</code> sur la même vue.</td>
+            </tr>
+            <tr>
+                <td><code>routes/web.php</code></td>
+                <td>Passage de la route <code>/dashboard</code> de <code>POST</code> à <code>GET</code> avec redirection vers <code>etudiant.accueil</code>.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>3. Vues Blade créées et intégrées (Maquettes Figma)</h2>
+    <ul>
+        <li><strong><code>resources/views/etudiant/accueil.blade.php</code> :</strong> Page d'accueil étudiant (Hero, Menu du jour, Promotions, Top 10 clients filtrable par période, bandeau cookies).</li>
+        <li><strong><code>resources/views/etudiant/menu/index.blade.php</code> :</strong> Page Commander (Filtres par catégories, ajout/retrait d'articles, panier intégré en bas de page et validation de commande).</li>
+        <li><strong><code>resources/views/etudiant/loyalty/index.blade.php</code> :</strong> Page Fidélité et Parrainage (Solde de points, jauge de progression, historique des points, code parrain copiable et liste des filleuls).</li>
+        <li><strong><code>resources/views/etudiant/reclamations/index.blade.php</code> :</strong> Page Historique et Réclamations (Historique des commandes, formulaire de création de réclamation et suivi des statuts).</li>
+    </ul>
+</body>
+</html>

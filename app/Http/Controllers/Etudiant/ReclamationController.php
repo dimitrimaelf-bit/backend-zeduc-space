@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Etudiant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Claim;
+use App\Models\LoyaltyAccount;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,31 +12,34 @@ use Illuminate\Support\Facades\Auth;
 class ReclamationController extends Controller
 {
     /**
-     * Liste toutes les réclamations de l'étudiant.
+     * Affiche l'historique des commandes, le formulaire de réclamation et le suivi.
      */
     public function index()
     {
-        // "Eager loading" de la commande associée pour optimiser la requête
+        $user = Auth::user();
+        $balance = (int) LoyaltyAccount::whereKey($user->id)->value('balance_points');
+
+        // 1. Toutes les commandes de l'étudiant (Historique)
+        $orders = Order::with('items')
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // 2. Toutes les réclamations de l'étudiant (Suivi)
         $claims = Claim::with('order')
-            ->where('user_id', Auth::id())
+            ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
             
-        return view('etudiant.reclamations.index', compact('claims'));
+        return view('etudiant.reclamations.index', compact('user', 'balance', 'orders', 'claims'));
     }
 
     /**
-     * Affiche le formulaire pour créer une nouvelle réclamation.
+     * Redirige vers la page principale si on appelle /reclamations/nouveau en GET.
      */
     public function create()
     {
-        // On récupère uniquement les commandes terminées ou livrées de cet étudiant
-        $orders = Order::where('user_id', Auth::id())
-            ->whereIn('status', ['delivered', 'completed'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-            
-        return view('etudiant.reclamations.create', compact('orders'));
+        return redirect()->route('etudiant.reclamations.index');
     }
 
     /**
@@ -44,8 +48,8 @@ class ReclamationController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'order_id' => 'required|exists:orders,id',
-            'subject' => 'required|string|max:150',
+            'order_id'    => 'required|exists:orders,id',
+            'subject'     => 'nullable|string|max:150',
             'description' => 'required|string'
         ]);
 
@@ -56,11 +60,11 @@ class ReclamationController extends Controller
 
         // Création de la réclamation avec le statut "open" par défaut
         Claim::create([
-            'order_id' => $order->id,
-            'user_id' => Auth::id(),
-            'subject' => $request->subject,
+            'order_id'    => $order->id,
+            'user_id'     => Auth::id(),
+            'subject'     => $request->subject ?: 'Problème sur la commande #' . $order->order_number,
             'description' => $request->description,
-            'status' => 'open'
+            'status'      => 'open'
         ]);
 
         return redirect()->route('etudiant.reclamations.index')

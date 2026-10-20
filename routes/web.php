@@ -5,10 +5,13 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Etudiant\AccueilController;
+use App\Http\Controllers\Etudiant\CookieController;
 use App\Http\Controllers\Etudiant\MenuController;
 use App\Http\Controllers\Etudiant\CartController;
 use App\Http\Controllers\Etudiant\OrderController;
 use App\Http\Controllers\Etudiant\LoyaltyController;
+use App\Http\Controllers\Etudiant\ParrainageController;
 use App\Http\Controllers\Etudiant\ReclamationController;
 
 // routes accessibles uniquement quand on est pas connecté
@@ -29,12 +32,18 @@ Route::middleware('guest')->group(function () {
 // routes accessibles uniquement quand on est connecté
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    Route::post('/dashboard', fn () => view('dashboard'))->name('dashboard');
+    Route::get('/dashboard', fn () => redirect()->route('etudiant.accueil'))->name('dashboard'); #changement de requette : post en get 
 });
+
+// Gestion de l'acceptation des cookies
+Route::post('/cookies', [CookieController::class, 'store'])->name('cookies.store');
 
 // ESPACE ÉTUDIANT 
 
 Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(function () {
+
+    // Accueil étudiant
+    Route::get('/accueil', [AccueilController::class, 'index'])->name('accueil');
     
     // Affichage du Menu
     Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
@@ -49,10 +58,14 @@ Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(functi
 
     // --- FIDÉLITÉ ---
     Route::get('/fidelite', [LoyaltyController::class, 'index'])->name('loyalty.index');
+    Route::post('/parrainage/generer', [ParrainageController::class, 'generer'])->name('parrainage.generer');
+    Route::post('/parrainage/utiliser', [ParrainageController::class, 'utiliser'])->name    ('parrainage.utiliser');
 
-    // --- RÉCLAMATIONS ---
+    // --- FIDÉLITÉ & PARRAINAGE ---
     Route::get('/reclamations', [ReclamationController::class, 'index'])->name('reclamations.index');
     Route::get('/reclamations/nouveau', [ReclamationController::class, 'create'])->name('reclamations.create');
     Route::post('/reclamations/nouveau', [ReclamationController::class, 'store'])->name('reclamations.store');
+
+    
 
 });
