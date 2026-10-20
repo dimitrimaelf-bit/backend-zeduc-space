@@ -13,10 +13,10 @@ class RolesAndSettingsSeeder extends Seeder
     public function run(): void
     {
         DB::table("roles")->insert([
-            ["code" => "student", "label" => "Etudiant"],
-            ["code" => "employee", "label" => "Employé"],
-            ["code" => "manager", "label" => "Gérant"],
-            ["code" => "admin", "label" => "Administrateur"],
+            ["id" => 1, "code" => "employee", "label" => "Employé"],
+            ["id" => 2, "code" => "student", "label" => "Etudiant"],
+            ["id" => 3, "code" => "manager", "label" => "Gérant"],
+            ["id" => 4, "code" => "admin", "label" => "Administrateur"],
         ]);
 
         DB::table("app_settings")->insert([

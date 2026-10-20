@@ -6,6 +6,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\DB;
 use Override;
 
 class StoreUserRequest extends FormRequest
@@ -30,7 +31,6 @@ class StoreUserRequest extends FormRequest
                 'required',
                 'integer',
                 Rule::exists('roles', 'id'),
-                Rule::in([1, 2, 3, 4]),
             ],
             'first_name' => ['required', 'string', 'max:80'],
             'last_name' => ['required', 'string', 'max:80'],
@@ -46,17 +46,21 @@ class StoreUserRequest extends FormRequest
     // traduis un role textuel en role numérique
     protected function prepareForValidation()
     {
-        if (is_string($this->role_id)) {
-            $map = [
-                "etudiant" => 1,
-                "employe" => 2,
-                "gerant" => 3,
-                "administrateur" => 4,
-            ];
-            $key = strtolower($this->role_id);
-            if (isset($map[$key])) {
-                $this->merge(["role_id" => $map[$key]]);
-            }
+        if (! is_string($this->role_id) || is_numeric($this->role_id)) {
+            return;
+        }
+
+        $roleCodes = [
+            'etudiant' => 'student',
+            'employe' => 'employee',
+            'gerant' => 'manager',
+            'administrateur' => 'admin',
+        ];
+        $roleCode = $roleCodes[strtolower($this->role_id)] ?? strtolower($this->role_id);
+        $roleId = DB::table('roles')->where('code', $roleCode)->value('id');
+
+        if ($roleId !== null) {
+            $this->merge(['role_id' => $roleId]);
         }
     }
 }
