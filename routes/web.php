@@ -11,6 +11,14 @@ use App\Http\Controllers\Etudiant\OrderController;
 use App\Http\Controllers\Etudiant\LoyaltyController;
 use App\Http\Controllers\Etudiant\ReclamationController;
 
+use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\MenuCategoryController;
+use App\Http\Controllers\Admin\MenuItemController;
+use App\Http\Controllers\Admin\PromotionController;
+use App\Http\Controllers\Admin\ClaimController;
+use App\Http\Controllers\Admin\AppSettingController;
+use App\Http\Controllers\Admin\DashboardController;
+
 // routes accessibles uniquement quand on est pas connecté
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
@@ -56,3 +64,22 @@ Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(functi
     Route::post('/reclamations/nouveau', [ReclamationController::class, 'store'])->name('reclamations.store');
 
 });
+
+// ROUTES ADMINISTRATION (SECURISEES PAR MIDDLEWARE )
+Route::middleware(['auth', 'role:admin']) //Securite : Seul un admin connecte peut entrer
+    ->prefix('admin')                    //URL : Ajoute /admin devant chaque route
+    ->name('admin.')                     //Nommage : Ajoute admin. devant le nom des routes
+    ->group(function () {
+        
+        // Route du Tableau de Bord (accessible sur /admin/dashboard)
+        Route::get('/dashboard', [DashboardController::class, 'stats'])->name('dashboard');
+        
+        // Routes CRUD des modules d'administration
+        Route::resource('employees', EmployeeController::class);
+        Route::resource('categories', MenuCategoryController::class);
+        Route::resource('menu', MenuItemController::class);
+        Route::resource('promotions', PromotionController::class);
+        Route::resource('claims', ClaimController::class)->only(['index', 'edit', 'update']);
+        Route::resource('settings', AppSettingController::class)->only(['index', 'update']);
+        
+    });
