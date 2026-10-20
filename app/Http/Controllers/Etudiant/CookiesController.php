@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CookieConsent;
 use Illuminate\Http\Request;
 
-class CookieController extends Controller
+class CookiesController extends Controller
 {
     public function store(Request $request)
     {

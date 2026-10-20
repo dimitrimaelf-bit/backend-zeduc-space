@@ -6,7 +6,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Etudiant\AccueilController;
-use App\Http\Controllers\Etudiant\CookieController;
+use App\Http\Controllers\Etudiant\CookiesController;
 use App\Http\Controllers\Etudiant\MenuController;
 use App\Http\Controllers\Etudiant\CartController;
 use App\Http\Controllers\Etudiant\OrderController;
@@ -38,13 +38,24 @@ Route::middleware('guest')->group(function () {
 
 
 // routes accessibles uniquement quand on est connecté
+
+// redirection automatique vers le dashboard selon le role de l'utilisateur
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    Route::get('/dashboard', fn () => redirect()->route('etudiant.accueil'))->name('dashboard'); // changement de requette : post en get 
+    
+    Route::get('/dashboard', function () {
+        $role = auth()->user()->role?->code;
+
+        return match ($role) {  
+            'admin'   => redirect()->route('admin.dashboard'),
+            'student' => redirect()->route('etudiant.accueil'),
+            default   => redirect()->route('etudiant.accueil'),
+        };
+    })->name('dashboard');
 });
 
 // Gestion de l'acceptation des cookies
-Route::post('/cookies', [CookieController::class, 'store'])->name('cookies.store');
+Route::post('/cookies', [CookiesController::class, 'store'])->name('cookies.store');
 
 // ESPACE ÉTUDIANT 
 // Après :
