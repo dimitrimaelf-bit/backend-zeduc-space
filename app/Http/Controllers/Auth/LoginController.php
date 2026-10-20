@@ -31,7 +31,7 @@ class LoginController extends Controller
         }
 
         $request->session()->regenerate();
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended(route('home'));
     }
 
     /*déconnecter l'utilisateur, invalide la session
@@ -39,6 +39,8 @@ class LoginController extends Controller
     public function destroy(Request $request) {
         Auth::logout();
         $request->session()->invalidate();
-        $request->session()->regenerateToken(); 
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login');
     }
 }

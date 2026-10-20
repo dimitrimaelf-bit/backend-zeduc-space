@@ -1,13 +1,16 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\HomeController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\RegisterController;
+use Illuminate\Support\Facades\Route;
 
 // routes accessibles uniquement quand on est pas connecté
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
 Route::middleware('guest')->group(function () {
+
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store']);
 
@@ -20,9 +23,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update');
 });
 
-
 // routes accessibles uniquement quand on est connecté
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    Route::post('/dashboard', fn () => view('dashboard'))->name('dashboard');
 });
