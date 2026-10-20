@@ -47,7 +47,8 @@ Route::middleware('auth')->group(function () {
 Route::post('/cookies', [CookieController::class, 'store'])->name('cookies.store');
 
 // ESPACE ÉTUDIANT 
-Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(function () {
+// Après :
+Route::middleware(['auth', 'role:student'])->prefix('etudiant')->name('etudiant.')->group(function () {
 
     // Accueil étudiant
     Route::get('/accueil', [AccueilController::class, 'index'])->name('accueil');
