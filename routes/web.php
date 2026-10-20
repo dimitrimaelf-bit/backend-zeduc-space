@@ -14,6 +14,9 @@ use App\Http\Controllers\Gerant\OrderSupervisionController;
 use App\Http\Controllers\Gerant\StatisticsController;
 use Illuminate\Support\Facades\Route;
 
+
+
+// routes accessibles uniquement quand on est pas connecté
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store']);
@@ -31,7 +34,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
     Route::post('/dashboard', fn () => view('dashboard'))->name('dashboard');
 
-    Route::middleware('role:3')->prefix('gerant')->name('gerant.')->group(function () {
+    Route::middleware('auth:sanctum','role:3')->prefix('gerant')->name('gerant.')->group(function () {
         Route::get('/commandes', [OrderSupervisionController::class, 'index'])
             ->name('orders.index');
         Route::patch('/commandes/{order}/status', [OrderSupervisionController::class, 'updateStatus'])
@@ -48,7 +51,7 @@ Route::middleware('auth')->group(function () {
             ->name('claims.review');
     });
 
-    Route::middleware('role:2')->prefix('etudiant')->name('etudiant.')->group(function () {
+    Route::middleware('auth:sanctum','role:2')->prefix('etudiant')->name('etudiant.')->group(function () {
         Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
         Route::get('/panier', [CartController::class, 'index'])->name('cart.index');
         Route::post('/panier/ajouter', [CartController::class, 'add'])->name('cart.add');
