@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Etudiant;
 use App\Http\Controllers\Controller;
 use App\Models\Claim;
 use App\Models\Order;
+use App\Models\LoyaltyAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,13 +16,22 @@ class ReclamationController extends Controller
      */
     public function index()
     {
+        $user = Auth::user();
+        $balance = $user ? (int) LoyaltyAccount::whereKey($user->id)->value('balance_points') : 0;
+
         // "Eager loading" de la commande associée pour optimiser la requête
         $claims = Claim::with('order')
-            ->where('user_id', Auth::id())
+            ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
             
-        return view('etudiant.reclamations.index', compact('claims'));
+        // Récupération des commandes pour la vue index / tableaux de réclamations
+        $orders = Order::where('user_id', $user->id)
+            ->whereIn('status', ['delivered', 'completed'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        return view('etudiant.reclamations.index', compact('claims', 'orders', 'user', 'balance'));
     }
 
     /**
@@ -29,13 +39,16 @@ class ReclamationController extends Controller
      */
     public function create()
     {
+        $user = Auth::user();
+        $balance = $user ? (int) LoyaltyAccount::whereKey($user->id)->value('balance_points') : 0;
+
         // On récupère uniquement les commandes terminées ou livrées de cet étudiant
-        $orders = Order::where('user_id', Auth::id())
+        $orders = Order::where('user_id', $user->id)
             ->whereIn('status', ['delivered', 'completed'])
             ->orderBy('created_at', 'desc')
             ->get();
             
-        return view('etudiant.reclamations.create', compact('orders'));
+        return view('etudiant.reclamations.create', compact('orders', 'user', 'balance'));
     }
 
     /**

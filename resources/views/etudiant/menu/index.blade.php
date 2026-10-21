@@ -226,7 +226,7 @@
 <!-- ================= NAVBAR ================= -->
 <nav class="navbar navbar-expand-lg navbar-dark navbar-miam sticky-top">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="{{ route('etudiant.accueil') }}">
+       <a class="navbar-brand d-flex align-items-center" href="{{ route('etudiant.accueil') }}">
             <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
                  style="width: 42px; height: 42px; border: 1px solid var(--miam-gold); color: var(--miam-gold);">
                 <i class="bi bi-shop"></i>

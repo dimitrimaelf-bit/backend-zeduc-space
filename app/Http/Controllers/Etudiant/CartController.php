@@ -64,12 +64,20 @@ class CartController extends Controller
     {
         $cart = Session::get('cart', []);
         
-        if (isset($cart[$request->item_id])) {
-            unset($cart[$request->item_id]);
+        $itemId = $request->input('item_id') ?? $request->input('menu_item_id');
+
+        if (isset($cart[$itemId])) {
+            // Si la quantité est supérieure à 1, on décrémente
+            if ($cart[$itemId]['quantity'] > 1) {
+                $cart[$itemId]['quantity']--;
+            } else {
+                // Sinon, on supprime uniquement cet article du panier
+                unset($cart[$itemId]);
+            }
             Session::put('cart', $cart);
         }
 
-        return back()->with('success', 'Plat retiré du panier.');
+        return back()->with('success', 'Panier mis à jour.');
     }
 
     /**

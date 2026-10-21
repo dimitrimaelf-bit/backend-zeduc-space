@@ -10,6 +10,10 @@ use App\Http\Controllers\Etudiant\CartController;
 use App\Http\Controllers\Etudiant\OrderController;
 use App\Http\Controllers\Etudiant\LoyaltyController;
 use App\Http\Controllers\Etudiant\ReclamationController;
+use App\Http\Controllers\Etudiant\AccueilController;
+use App\Http\Controllers\CookieController;
+use App\Http\Controllers\Etudiant\ParrainageController;
+
 
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\MenuCategoryController;
@@ -20,6 +24,7 @@ use App\Http\Controllers\Admin\AppSettingController;
 use App\Http\Controllers\Admin\DashboardController;
 
 // routes accessibles uniquement quand on est pas connecté
+
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store']);
@@ -42,7 +47,15 @@ Route::middleware('auth')->group(function () {
 
 // ESPACE ÉTUDIANT 
 
+// Enregistrement du consentement des cookies
+    Route::post('/cookies', [CookieController::class, 'store'])->name('cookies.store');
+
+
 Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(function () {
+
+    // Page d'accueil avec le Top 10 et les points
+    Route::get('/accueil', [AccueilController::class, 'index'])->name('accueil');
+
     
     // Affichage du Menu
     Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
@@ -62,7 +75,10 @@ Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(functi
     Route::get('/reclamations', [ReclamationController::class, 'index'])->name('reclamations.index');
     Route::get('/reclamations/nouveau', [ReclamationController::class, 'create'])->name('reclamations.create');
     Route::post('/reclamations/nouveau', [ReclamationController::class, 'store'])->name('reclamations.store');
-
+        // --- PARRAINAGE ---
+    // --- PARRAINAGE ---
+    Route::post('/parrainage/generer', [ParrainageController::class, 'generer'])->name('parrainage.generer');
+    Route::post('/parrainage/utiliser', [ParrainageController::class, 'utiliser'])->name('parrainage.utiliser');
 });
 
 // ROUTES ADMINISTRATION (SECURISEES PAR MIDDLEWARE )

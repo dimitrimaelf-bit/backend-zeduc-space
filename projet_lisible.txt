@@ -95,7 +95,12 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    //
+    public function stats()
+    {
+        // Pour l'instant, on affiche un texte simple pour dÃ©bloquer la page.
+        // Plus tard, tu pourras remplacer cette ligne par : return view('admin.dashboard');
+        return "Bienvenue sur le tableau de bord Administrateur !";
+    }
 }
 
 === FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Http\Controllers\Admin\EmployeeController.php ===
@@ -687,23 +692,18 @@ class CartController extends Controller
     }
 
     /**
-     * Diminue la quantitÃ© d'un article ou le retire du panier.
+     * Retire un article du panier.
      */
     public function remove(Request $request)
     {
         $cart = Session::get('cart', []);
-        $id = $request->item_id;
-
-        if (isset($cart[$id])) {
-            if ($cart[$id]['quantity'] > 1 && !$request->boolean('force_delete')) {
-                $cart[$id]['quantity'] -= 1;
-            } else {
-                unset($cart[$id]);
-            }
+        
+        if (isset($cart[$request->item_id])) {
+            unset($cart[$request->item_id]);
             Session::put('cart', $cart);
         }
 
-        return back()->with('success', 'Panier mis Ã  jour.');
+        return back()->with('success', 'Plat retirÃ© du panier.');
     }
 
     /**
@@ -719,34 +719,6 @@ class CartController extends Controller
     }
 }
 
-=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Http\Controllers\Etudiant\CookiesController.php ===
-<?php
-
-namespace App\Http\Controllers\Etudiant;
-
-use App\Http\Controllers\Controller;
-use App\Models\CookieConsent;
-use Illuminate\Http\Request;
-
-class CookieController extends Controller
-{
-    public function store(Request $request)
-    {
-        $request->validate(['consented' => ['required', 'boolean']]);
-
-        CookieConsent::create([
-            'user_id'        => $request->user()?->id,
-            'session_id'     => $request->user() ? null : $request->session()->getId(),
-            'consented'      => $request->boolean('consented'),
-            'policy_version' => '1.0',
-        ]);
-
-        $request->session()->put('cookie_consent_answered', true);
-
-        return back();
-    }
-}
-
 === FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Http\Controllers\Etudiant\EvenementController.php ===
 
 === FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Http\Controllers\Etudiant\HistoriqueController.php ===
@@ -759,48 +731,26 @@ namespace App\Http\Controllers\Etudiant;
 use App\Http\Controllers\Controller;
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyTransaction;
-use App\Models\Referral;
-use App\Models\ReferralCode;
 use Illuminate\Support\Facades\Auth;
 
 class LoyaltyController extends Controller
 {
     /**
-     * Affiche la page combinÃ©e : FidÃ©litÃ© et Parrainage.
+     * Affiche le solde et l'historique des points de fidÃ©litÃ©.
      */
     public function index()
     {
         $user = Auth::user();
         
-        // 1. Solde de points
+        // 1. RÃ©cupÃ©ration du compte fidÃ©litÃ© (qui a Ã©tÃ© crÃ©Ã© automatiquement par votre Trigger SQL)
         $account = LoyaltyAccount::where('user_id', $user->id)->first();
-        $balance = $account ? (int) $account->balance_points : 0;
         
-        // 2. Historique des transactions de points (avec la commande liÃ©e)
-        $transactions = LoyaltyTransaction::with('order')
-            ->where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // 3. Code de parrainage actif de l'Ã©tudiant
-        $referralCode = ReferralCode::where('user_id', $user->id)
-            ->where('is_active', true)
-            ->first();
-
-        // 4. Liste des filleuls parrainÃ©s par cet Ã©tudiant
-        $referrals = Referral::with(['referred.orders'])
-            ->where('referrer_user_id', $user->id)
+        // 2. RÃ©cupÃ©ration de l'historique complet (Livre de comptes)
+        $transactions = LoyaltyTransaction::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
             
-        return view('etudiant.loyalty.index', compact(
-            'user',
-            'balance',
-            'account',
-            'transactions',
-            'referralCode',
-            'referrals'
-        ));
+        return view('etudiant.loyalty.index', compact('account', 'transactions'));
     }
 }
 
@@ -810,23 +760,18 @@ class LoyaltyController extends Controller
 namespace App\Http\Controllers\Etudiant;
 
 use App\Http\Controllers\Controller;
-use App\Models\LoyaltyAccount;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Promotion;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
 
 class MenuController extends Controller
 {
     /**
-     * Affiche la page Commander : Plats, catÃ©gories, promotions et panier intÃ©grÃ©.
+     * Affiche la page d'accueil de l'Ã©tudiant : Menu, plats du jour et promotions.
      */
-    public function index(Request $request)
+    public function index()
     {
-        $user = $request->user();
-        $balance = (int) LoyaltyAccount::whereKey($user->id)->value('balance_points');
-
         // 1. RÃ©cupÃ©rer les promotions actives
         $promotions = Promotion::where('is_active', true)
             ->where(function ($query) {
@@ -842,25 +787,15 @@ class MenuController extends Controller
             ->where('is_available', true)
             ->get();
 
-        // 3. RÃ©cupÃ©rer le menu classÃ© par catÃ©gories (utilise la relation 'items' de MenuCategory)
-        $categories = MenuCategory::with(['items' => function ($query) {
+        // 3. RÃ©cupÃ©rer le menu classÃ© par catÃ©gories (uniquement les articles disponibles)
+        $categories = MenuCategory::with(['menuItems' => function ($query) {
                 $query->where('is_available', true);
             }])
             ->where('is_active', true)
             ->orderBy('sort_order', 'asc')
             ->get();
 
-        // 4. RÃ©cupÃ©rer le panier en session pour l'afficher en bas de page
-        $cart = Session::get('cart', []);
-
-        return view('etudiant.menu.index', compact(
-            'user',
-            'balance',
-            'promotions',
-            'dailySpecials',
-            'categories',
-            'cart'
-        ));
+        return view('etudiant.menu.index', compact('promotions', 'dailySpecials', 'categories'));
     }
 }
 
@@ -1027,7 +962,6 @@ namespace App\Http\Controllers\Etudiant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Claim;
-use App\Models\LoyaltyAccount;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -1035,34 +969,31 @@ use Illuminate\Support\Facades\Auth;
 class ReclamationController extends Controller
 {
     /**
-     * Affiche l'historique des commandes, le formulaire de rÃ©clamation et le suivi.
+     * Liste toutes les rÃ©clamations de l'Ã©tudiant.
      */
     public function index()
     {
-        $user = Auth::user();
-        $balance = (int) LoyaltyAccount::whereKey($user->id)->value('balance_points');
-
-        // 1. Toutes les commandes de l'Ã©tudiant (Historique)
-        $orders = Order::with('items')
-            ->where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // 2. Toutes les rÃ©clamations de l'Ã©tudiant (Suivi)
+        // "Eager loading" de la commande associÃ©e pour optimiser la requÃªte
         $claims = Claim::with('order')
-            ->where('user_id', $user->id)
+            ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->get();
             
-        return view('etudiant.reclamations.index', compact('user', 'balance', 'orders', 'claims'));
+        return view('etudiant.reclamations.index', compact('claims'));
     }
 
     /**
-     * Redirige vers la page principale si on appelle /reclamations/nouveau en GET.
+     * Affiche le formulaire pour crÃ©er une nouvelle rÃ©clamation.
      */
     public function create()
     {
-        return redirect()->route('etudiant.reclamations.index');
+        // On rÃ©cupÃ¨re uniquement les commandes terminÃ©es ou livrÃ©es de cet Ã©tudiant
+        $orders = Order::where('user_id', Auth::id())
+            ->whereIn('status', ['delivered', 'completed'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        return view('etudiant.reclamations.create', compact('orders'));
     }
 
     /**
@@ -1071,8 +1002,8 @@ class ReclamationController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'order_id'    => 'required|exists:orders,id',
-            'subject'     => 'nullable|string|max:150',
+            'order_id' => 'required|exists:orders,id',
+            'subject' => 'required|string|max:150',
             'description' => 'required|string'
         ]);
 
@@ -1083,11 +1014,11 @@ class ReclamationController extends Controller
 
         // CrÃ©ation de la rÃ©clamation avec le statut "open" par dÃ©faut
         Claim::create([
-            'order_id'    => $order->id,
-            'user_id'     => Auth::id(),
-            'subject'     => $request->subject ?: 'ProblÃ¨me sur la commande #' . $order->order_number,
+            'order_id' => $order->id,
+            'user_id' => Auth::id(),
+            'subject' => $request->subject,
             'description' => $request->description,
-            'status'      => 'open'
+            'status' => 'open'
         ]);
 
         return redirect()->route('etudiant.reclamations.index')
@@ -1103,6 +1034,33 @@ namespace App\Http\Controllers;
 abstract class Controller
 {
     //
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Http\Controllers\CookieController.php ===
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\CookieConsent;
+use Illuminate\Http\Request;
+
+class CookieController extends Controller
+{
+    public function store(Request $request)
+    {
+        $request->validate(['consented' => ['required', 'boolean']]);
+
+        CookieConsent::create([
+            'user_id'        => $request->user()?->id,                                 // visiteur : null
+            'session_id'     => $request->user() ? null : $request->session()->getId(),
+            'consented'      => $request->boolean('consented'),
+            'policy_version' => '1.0',            // Ã  changer si votre politique change
+        ]);
+
+        $request->session()->put('cookie_consent_answered', true); // masque le bandeau
+
+        return back();
+    }
 }
 
 === FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Http\Middleware\EnsureRole.php ===
@@ -1355,6 +1313,11 @@ class MenuCategory extends Model
     {
         return $this->hasMany(MenuItem::class, 'category_id');
     }
+    public function menuItems()
+{
+    // Indique qu'une catÃ©gorie possÃ¨de plusieurs plats (MenuItem)
+    return $this->hasMany(MenuItem::class, 'category_id');
+}
 }
 
 === FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Models\MenuItem.php ===
@@ -1500,7 +1463,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Promotion extends Model
 {
-    const CREATED_AT = "creted_at";
+    const CREATED_AT = "created_at";
     const UPDATED_AT = null; // Seulement 'created_at'
 
     protected $fillable = [
@@ -4054,6 +4017,170 @@ class DatabaseSeeder extends Seeder
     }
 }
 
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\database\seeders\MassDataSeeder.php ===
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\MenuCategory;
+use App\Models\MenuItem;
+use App\Models\Promotion;
+
+class MassDataSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // --- 1. AJOUT MASSIF DE PROMOTIONS ---
+        $promotions = [
+            ['title' => 'Happy Hour', 'description' => '-20% sur les boissons de 14h Ã  16h', 'is_active' => true],
+            ['title' => 'Menu Duo', 'description' => '2 Plats achetÃ©s = 1 Boisson offerte', 'is_active' => true],
+            ['title' => 'Livraison Gratuite', 'description' => 'Pour toute commande de plus de 5000 F', 'is_active' => true],
+        ];
+
+        foreach ($promotions as $promo) {
+            Promotion::create($promo);
+        }
+
+        // --- 2. AJOUT MASSIF DE PLATS DU JOUR ---
+        $categorie = MenuCategory::firstOrCreate(
+            ['name' => 'Plats Principaux'], 
+            ['sort_order' => 1, 'is_active' => true]
+        );
+
+        $platsDuJour = [
+            ['name' => 'Poulet DG', 'description' => 'Poulet frit et plantains', 'price_fcfa' => 2500],
+            ['name' => 'Riz Cantonais', 'description' => 'Riz sautÃ© aux lÃ©gumes', 'price_fcfa' => 2000],
+            ['name' => 'Ero et Waterfufu', 'description' => 'SpÃ©cialitÃ© du Sud-Ouest', 'price_fcfa' => 3000],
+            ['name' => 'Salade composÃ©e', 'description' => 'LÃ©gumes frais de saison', 'price_fcfa' => 1500],
+        ];
+
+        foreach ($platsDuJour as $plat) {
+            MenuItem::create([
+                'category_id'      => $categorie->id,
+                'name'             => $plat['name'],
+                'description'      => $plat['description'],
+                'price_fcfa'       => $plat['price_fcfa'],
+                'is_available'     => true,
+                'is_daily_special' => true, // ApparaÃ®tront tous dans la section "Plats du jour"
+            ]);
+        }
+    }
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\database\seeders\OrderSeeder.php ===
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\User;
+use App\Models\Order;
+use App\Models\Role;
+use Carbon\Carbon;
+use Illuminate\Support\Str;
+
+class OrderSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $roleEtudiant = Role::where('code', 'student')->first();
+
+       // 1. CrÃ©er 3 Ã©tudiants fictifs (sans crÃ©er de doublons s'ils existent dÃ©jÃ )
+        $users = [];
+        for ($i = 1; $i <= 3; $i++) {
+            $users[] = User::firstOrCreate(
+                ['email' => "client{$i}@test.com"], // Laravel cherche cet email
+                [
+                    'role_id' => $roleEtudiant->id,
+                    'first_name' => 'Client',
+                    'last_name' => 'Test ' . $i,
+                    'phone' => "060000000{$i}",
+                    'password' => bcrypt('password'),
+                    'is_active' => true
+                ] // Si l'email n'existe pas, il crÃ©e le compte avec ces infos
+            );
+        }
+
+        // 2. Commandes pour aujourd'hui (Filtre "Jour")
+        Order::create([
+            'order_number' => 'CMD-' . Str::random(6),
+            'user_id' => $users[0]->id,
+            'service_mode' => 'on_site',
+            'subtotal_fcfa' => 5000,
+            'total_fcfa' => 5000,
+            'status' => 'completed',
+            'created_at' => Carbon::now()
+        ]);
+        
+        Order::create([
+            'order_number' => 'CMD-' . Str::random(6),
+            'user_id' => $users[0]->id,
+            'service_mode' => 'delivery',
+            'subtotal_fcfa' => 3000,
+            'total_fcfa' => 3000,
+            'status' => 'completed',
+            'created_at' => Carbon::now()
+        ]);
+        
+        // 3. Commandes d'il y a 3 jours (Filtre "Semaine")
+        Order::create([
+            'order_number' => 'CMD-' . Str::random(6),
+            'user_id' => $users[1]->id,
+            'service_mode' => 'on_site',
+            'subtotal_fcfa' => 8000,
+            'total_fcfa' => 8000,
+            'status' => 'completed',
+            'created_at' => Carbon::now()->subDays(3)
+        ]);
+        
+        // 4. Commandes d'il y a 20 jours (Filtre "Mois")
+        Order::create([
+            'order_number' => 'CMD-' . Str::random(6),
+            'user_id' => $users[2]->id,
+            'service_mode' => 'delivery',
+            'subtotal_fcfa' => 15000,
+            'total_fcfa' => 15000,
+            'status' => 'completed',
+            'created_at' => Carbon::now()->subDays(20)
+        ]);
+    }
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\database\seeders\PlatSeeder.php ===
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\MenuCategory;
+use App\Models\MenuItem;
+
+class PlatSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // 1. On s'assure qu'une catÃ©gorie "Plats Principaux" existe (ou on la rÃ©cupÃ¨re)
+        $catPlats = MenuCategory::firstOrCreate([
+            'name' => 'Plats Principaux'
+        ], [
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        // 2. On insÃ¨re le plat en activant explicitement le "Plat du jour"
+        MenuItem::create([
+            'category_id'      => $catPlats->id,
+            'name'             => 'Poulet DG SpÃ©cial',
+            'description'      => 'Un dÃ©licieux poulet DG bien chaud pour les Ã©tudiants.',
+            'price_fcfa'       => 2500,
+            'image_url'        => 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1',
+            'is_available'     => true,
+            'is_daily_special' => true, // C'est cette ligne qui l'envoie directement dans les Plats du jour
+        ]);
+    }
+}
+
 === FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\database\seeders\RolesAndSettingsSeeder.php ===
 <?php
 
@@ -5997,7 +6124,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 <!-- ================= NAVBAR ================= -->
 <nav class="navbar navbar-expand-lg navbar-dark navbar-miam sticky-top">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="{{ route('etudiant.accueil') }}">
+       <a class="navbar-brand d-flex align-items-center" href="{{ route('etudiant.menu.index') }}">
             <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
                  style="width: 42px; height: 42px; border: 1px solid var(--miam-gold); color: var(--miam-gold);">
                 <i class="bi bi-shop"></i>
@@ -6024,14 +6151,14 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                     <a class="nav-link" href="{{ route('etudiant.reclamations.index') }}">Historique</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('etudiant.accueil') }}#promotions">Jeux et Ã©vÃ©nements</a>
+                    <a class="nav-link" href="{{ route('etudiant.menu.index') }}#promotions">Jeux et Ã©vÃ©nements</a>
                 </li>
             </ul>
         </div>
 
         <div class="d-none d-lg-flex align-items-center">
             <a href="{{ route('etudiant.loyalty.index') }}" class="badge-user">
-                {{ $user->first_name }} {{ strtoupper(substr($user->last_name, 0, 1)) }}. &middot; {{ $balance }} pts
+                {{ auth()->user()->first_name }} {{ strtoupper(substr(auth()->user()->last_name, 0, 1)) }}. &middot; 0 pts
             </a>
         </div>
     </div>
@@ -7684,13 +7811,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
-use App\Http\Controllers\Etudiant\AccueilController;
-use App\Http\Controllers\Etudiant\CookieController;
 use App\Http\Controllers\Etudiant\MenuController;
 use App\Http\Controllers\Etudiant\CartController;
 use App\Http\Controllers\Etudiant\OrderController;
 use App\Http\Controllers\Etudiant\LoyaltyController;
-use App\Http\Controllers\Etudiant\ParrainageController;
 use App\Http\Controllers\Etudiant\ReclamationController;
 
 use App\Http\Controllers\Admin\EmployeeController;
@@ -7719,18 +7843,12 @@ Route::middleware('guest')->group(function () {
 // routes accessibles uniquement quand on est connectÃ©
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    Route::get('/dashboard', fn () => redirect()->route('etudiant.accueil'))->name('dashboard'); // changement de requette : post en get 
+    Route::post('/dashboard', fn () => view('dashboard'))->name('dashboard');
 });
 
-// Gestion de l'acceptation des cookies
-Route::post('/cookies', [CookieController::class, 'store'])->name('cookies.store');
-
 // ESPACE Ã‰TUDIANT 
-// AprÃ¨s :
-Route::middleware(['auth', 'role:student'])->prefix('etudiant')->name('etudiant.')->group(function () {
 
-    // Accueil Ã©tudiant
-    Route::get('/accueil', [AccueilController::class, 'index'])->name('accueil');
+Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(function () {
     
     // Affichage du Menu
     Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
@@ -7743,10 +7861,8 @@ Route::middleware(['auth', 'role:student'])->prefix('etudiant')->name('etudiant.
     // Gestion des Commandes
     Route::post('/commande', [OrderController::class, 'store'])->name('order.store');
 
-    // --- FIDÃ‰LITÃ‰ & PARRAINAGE ---
+    // --- FIDÃ‰LITÃ‰ ---
     Route::get('/fidelite', [LoyaltyController::class, 'index'])->name('loyalty.index');
-    Route::post('/parrainage/generer', [ParrainageController::class, 'generer'])->name('parrainage.generer');
-    Route::post('/parrainage/utiliser', [ParrainageController::class, 'utiliser'])->name('parrainage.utiliser');
 
     // --- RÃ‰CLAMATIONS ---
     Route::get('/reclamations', [ReclamationController::class, 'index'])->name('reclamations.index');
@@ -7907,9 +8023,7 @@ abstract class TestCase extends BaseTestCase
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
-        },
-        "disable-tls": false,
-        "secure-http": true
+        }
     },
     "minimum-stability": "stable",
     "prefer-stable": true
