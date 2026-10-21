@@ -3,23 +3,18 @@
 namespace App\Http\Controllers\Etudiant;
 
 use App\Http\Controllers\Controller;
-use App\Models\LoyaltyAccount;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Promotion;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
 
 class MenuController extends Controller
 {
     /**
-     * Affiche la page Commander : Plats, catégories, promotions et panier intégré.
+     * Affiche la page d'accueil de l'étudiant : Menu, plats du jour et promotions.
      */
-    public function index(Request $request)
+    public function index()
     {
-        $user = $request->user();
-        $balance = (int) LoyaltyAccount::whereKey($user->id)->value('balance_points');
-
         // 1. Récupérer les promotions actives
         $promotions = Promotion::where('is_active', true)
             ->where(function ($query) {
@@ -35,24 +30,14 @@ class MenuController extends Controller
             ->where('is_available', true)
             ->get();
 
-        // 3. Récupérer le menu classé par catégories (utilise la relation 'items' de MenuCategory)
-        $categories = MenuCategory::with(['items' => function ($query) {
+        // 3. Récupérer le menu classé par catégories (uniquement les articles disponibles)
+        $categories = MenuCategory::with(['menuItems' => function ($query) {
                 $query->where('is_available', true);
             }])
             ->where('is_active', true)
             ->orderBy('sort_order', 'asc')
             ->get();
 
-        // 4. Récupérer le panier en session pour l'afficher en bas de page
-        $cart = Session::get('cart', []);
-
-        return view('etudiant.menu.index', compact(
-            'user',
-            'balance',
-            'promotions',
-            'dailySpecials',
-            'categories',
-            'cart'
-        ));
+        return view('etudiant.menu.index', compact('promotions', 'dailySpecials', 'categories'));
     }
 }
