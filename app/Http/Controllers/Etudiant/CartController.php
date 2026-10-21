@@ -58,23 +58,18 @@ class CartController extends Controller
     }
 
     /**
-     * Diminue la quantité d'un article ou le retire du panier.
+     * Retire un article du panier.
      */
     public function remove(Request $request)
     {
         $cart = Session::get('cart', []);
-        $id = $request->item_id;
-
-        if (isset($cart[$id])) {
-            if ($cart[$id]['quantity'] > 1 && !$request->boolean('force_delete')) {
-                $cart[$id]['quantity'] -= 1;
-            } else {
-                unset($cart[$id]);
-            }
+        
+        if (isset($cart[$request->item_id])) {
+            unset($cart[$request->item_id]);
             Session::put('cart', $cart);
         }
 
-        return back()->with('success', 'Panier mis à jour.');
+        return back()->with('success', 'Plat retiré du panier.');
     }
 
     /**

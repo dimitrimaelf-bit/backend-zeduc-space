@@ -5,13 +5,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
-use App\Http\Controllers\Etudiant\AccueilController;
-use App\Http\Controllers\Etudiant\CookiesController;
 use App\Http\Controllers\Etudiant\MenuController;
 use App\Http\Controllers\Etudiant\CartController;
 use App\Http\Controllers\Etudiant\OrderController;
 use App\Http\Controllers\Etudiant\LoyaltyController;
-use App\Http\Controllers\Etudiant\ParrainageController;
 use App\Http\Controllers\Etudiant\ReclamationController;
 
 use App\Http\Controllers\Admin\EmployeeController;
@@ -38,31 +35,14 @@ Route::middleware('guest')->group(function () {
 
 
 // routes accessibles uniquement quand on est connecté
-
-// redirection automatique vers le dashboard selon le role de l'utilisateur
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    
-    Route::get('/dashboard', function () {
-        $role = auth()->user()->role?->code;
-
-        return match ($role) {  
-            'admin'   => redirect()->route('admin.dashboard'),
-            'student' => redirect()->route('etudiant.accueil'),
-            default   => redirect()->route('etudiant.accueil'),
-        };
-    })->name('dashboard');
+    Route::post('/dashboard', fn () => view('dashboard'))->name('dashboard');
 });
 
-// Gestion de l'acceptation des cookies
-Route::post('/cookies', [CookiesController::class, 'store'])->name('cookies.store');
-
 // ESPACE ÉTUDIANT 
-// Après :
-Route::middleware(['auth', 'role:student'])->prefix('etudiant')->name('etudiant.')->group(function () {
 
-    // Accueil étudiant
-    Route::get('/accueil', [AccueilController::class, 'index'])->name('accueil');
+Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(function () {
     
     // Affichage du Menu
     Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
@@ -75,10 +55,8 @@ Route::middleware(['auth', 'role:student'])->prefix('etudiant')->name('etudiant.
     // Gestion des Commandes
     Route::post('/commande', [OrderController::class, 'store'])->name('order.store');
 
-    // --- FIDÉLITÉ & PARRAINAGE ---
+    // --- FIDÉLITÉ ---
     Route::get('/fidelite', [LoyaltyController::class, 'index'])->name('loyalty.index');
-    Route::post('/parrainage/generer', [ParrainageController::class, 'generer'])->name('parrainage.generer');
-    Route::post('/parrainage/utiliser', [ParrainageController::class, 'utiliser'])->name('parrainage.utiliser');
 
     // --- RÉCLAMATIONS ---
     Route::get('/reclamations', [ReclamationController::class, 'index'])->name('reclamations.index');
