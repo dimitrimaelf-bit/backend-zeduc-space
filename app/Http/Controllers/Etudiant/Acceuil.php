@@ -44,7 +44,7 @@ class AccueilController extends Controller
             default   => null,
         };
 
-        $topClients = User::whereHas('role', fn ($q) => $q->where('code', 'student'))
+        $topClients = User::where('role_id', 2)
             // withCount crée la colonne "commandes_terminees" sans charger les commandes
             ->withCount(['orders as commandes_terminees' => function ($q) use ($depuis) {
                 $q->where('status', 'completed');

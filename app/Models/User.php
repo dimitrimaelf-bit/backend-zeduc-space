@@ -58,11 +58,6 @@ class User extends Authenticatable
         return $this->hasMany(Claim::class);
     }
 
-    public function shifts(): HasMany
-    {
-        return $this->hasMany(EmployeeShift::class);
-    }
-
     // Références (parrainages)
     public function referralsMade(): HasMany
     {

@@ -11,16 +11,19 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
         :root {
-            --zeduc-gold: #d4af37;
+            --zeduc-gold: #cfbd97;
             --zeduc-black: #0f0f0f;
+            --zeduc-gold-hover:#bfae88;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
+            background-color: #cfbd97;
+            color: var(--zeduc-black);
         }
 
-        .gold { color: var(--zeduc-gold) !important; }
+        .text-gold { color: var(--zeduc-gold) !important; }
+        .bg-gold{ background-color: var(--zeduc-gold) !important; }
 
         .btn-gold {
             background-color: var(--zeduc-gold);
@@ -62,7 +65,7 @@
             background-image: url('../images/boisson_accueil_jpg.jpeg');
             background-size: cover;
             background-position: center;
-            opacity: 0.2; /* tes 20% sont ici, seulement sur l'image */
+            opacity: 0.4; /* tes 20% sont ici, seulement sur l'image */
             z-index: -1;
         }
         .dark-background {

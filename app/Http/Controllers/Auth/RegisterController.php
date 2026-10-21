@@ -25,7 +25,7 @@ class RegisterController extends Controller
         $data = $request->validated();
 
         $user = DB::transaction(function () use ($data) {
-            $studentRole = Role::where('code', 'student')->firstOrFail();
+            $studentRole = Role::findOrFail(2);
             $referralCode = isset($data['referral_code'])
                 ? ReferralCode::where('code', $data['referral_code'])
                     ->where('is_active', true)
