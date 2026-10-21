@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for C:\Users\PC\backend-zeduc-space\app</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="_css/bootstrap.min.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="_css/nv.d3.min.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="_css/style.css?v=11.0.12" rel="stylesheet" type="text/css">
+  <link href="_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="index.html">C:\Users\PC\backend-zeduc-space\app</a></li>
+         <li class="breadcrumb-item active">(Dashboard)</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Http/Controllers/Admin/MenuCategoryController.php.html#8">App\Http\Controllers\Admin\MenuCategoryController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/LoginController.php.html#10">App\Http\Controllers\Auth\LoginController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/PasswordResetController.php.html#10">App\Http\Controllers\Auth\PasswordResetController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/RegisterController.php.html#10">App\Http\Controllers\Auth\RegisterController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Acceuil.php.html#12">App\Http\Controllers\Etudiant\AccueilController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/CartController.php.html#10">App\Http\Controllers\Etudiant\CartController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Cookies.php.html#8">App\Http\Controllers\CookieController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/LoyaltyController.php.html#10">App\Http\Controllers\Etudiant\LoyaltyController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/MenuController.php.html#11">App\Http\Controllers\Etudiant\MenuController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/OrderController.php.html#14">App\Http\Controllers\Etudiant\OrderController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Parrainage.php.html#11">App\Http\Controllers\Etudiant\ParrainageController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/ReclamationController.php.html#11">App\Http\Controllers\Etudiant\ReclamationController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Requests/StoreUserRequest.php.html#11">App\Http\Requests\StoreUserRequest</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/AppSetting.php.html#8">App\Models\AppSetting</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Claim.php.html#8">App\Models\Claim</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/CookieConsent.php.html#8">App\Models\CookieConsent</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/LoyaltyAccount.php.html#8">App\Models\LoyaltyAccount</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/LoyaltyTransaction.php.html#8">App\Models\LoyaltyTransaction</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/MenuCategory.php.html#8">App\Models\MenuCategory</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/MenuItem.php.html#8">App\Models\MenuItem</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Order.php.html#10">App\Models\Order</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/OrderItem.php.html#8">App\Models\OrderItem</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Payment.php.html#8">App\Models\Payment</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Referral.php.html#8">App\Models\Referral</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/ReferralCode.php.html#9">App\Models\ReferralCode</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Role.php.html#8">App\Models\Role</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuItemController.php.html#8">App\Http\Controllers\Admin\MenuItemController</a></td><td class="text-right">10%</td></tr>
+       <tr><td><a href="Models/User.php.html#13">App\Models\User</a></td><td class="text-right">12%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/AppSettingController.php.html#7">App\Http\Controllers\Admin\AppSettingController</a></td><td class="text-right">16%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/DashboardController.php.html#13">App\Http\Controllers\Admin\DashboardController</a></td><td class="text-right">22%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/ClaimController.php.html#9">App\Http\Controllers\Admin\ClaimController</a></td><td class="text-right">34%</td></tr>
+       <tr><td><a href="Providers/AppServiceProvider.php.html#8">App\Providers\AppServiceProvider</a></td><td class="text-right">42%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/PromotionController.php.html#8">App\Http\Controllers\Admin\PromotionController</a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="Http/Middleware/EnsureIsAdmin.php.html#9">App\Http\Middleware\EnsureIsAdmin</a></td><td class="text-right">80%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Http/Controllers/Admin/DashboardController.php.html#13">App\Http\Controllers\Admin\DashboardController</a></td><td class="text-right">310</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Parrainage.php.html#11">App\Http\Controllers\Etudiant\ParrainageController</a></td><td class="text-right">110</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/CartController.php.html#10">App\Http\Controllers\Etudiant\CartController</a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuItemController.php.html#8">App\Http\Controllers\Admin\MenuItemController</a></td><td class="text-right">67</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/PasswordResetController.php.html#10">App\Http\Controllers\Auth\PasswordResetController</a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Acceuil.php.html#12">App\Http\Controllers\Etudiant\AccueilController</a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/OrderController.php.html#14">App\Http\Controllers\Etudiant\OrderController</a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="Http/Requests/StoreUserRequest.php.html#11">App\Http\Requests\StoreUserRequest</a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/LoginController.php.html#10">App\Http\Controllers\Auth\LoginController</a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/ClaimController.php.html#9">App\Http\Controllers\Admin\ClaimController</a></td><td class="text-right">8</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Cookies.php.html#8">App\Http\Controllers\CookieController</a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Http/Middleware/EnsureIsAdmin.php.html#9">App\Http\Middleware\EnsureIsAdmin</a></td><td class="text-right">3</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Http/Controllers/Admin/AppSettingController.php.html#14"><abbr title="App\Http\Controllers\Admin\AppSettingController::update">update</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/ClaimController.php.html#30"><abbr title="App\Http\Controllers\Admin\ClaimController::edit">edit</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/ClaimController.php.html#38"><abbr title="App\Http\Controllers\Admin\ClaimController::update">update</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/DashboardController.php.html#18"><abbr title="App\Http\Controllers\Admin\DashboardController::index">index</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/DashboardController.php.html#70"><abbr title="App\Http\Controllers\Admin\DashboardController::gerantDashboard">gerantDashboard</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/DashboardController.php.html#91"><abbr title="App\Http\Controllers\Admin\DashboardController::employeeDashboard">employeeDashboard</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/DashboardController.php.html#113"><abbr title="App\Http\Controllers\Admin\DashboardController::getTopClients">getTopClients</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/EmployeeController.php.html#34"><abbr title="App\Http\Controllers\Admin\EmployeeController::create">create</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/EmployeeController.php.html#73"><abbr title="App\Http\Controllers\Admin\EmployeeController::edit">edit</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuCategoryController.php.html#11"><abbr title="App\Http\Controllers\Admin\MenuCategoryController::index">index</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuCategoryController.php.html#17"><abbr title="App\Http\Controllers\Admin\MenuCategoryController::create">create</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuCategoryController.php.html#22"><abbr title="App\Http\Controllers\Admin\MenuCategoryController::store">store</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuCategoryController.php.html#35"><abbr title="App\Http\Controllers\Admin\MenuCategoryController::edit">edit</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuCategoryController.php.html#41"><abbr title="App\Http\Controllers\Admin\MenuCategoryController::update">update</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuCategoryController.php.html#54"><abbr title="App\Http\Controllers\Admin\MenuCategoryController::destroy">destroy</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuItemController.php.html#23"><abbr title="App\Http\Controllers\Admin\MenuItemController::create">create</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuItemController.php.html#29"><abbr title="App\Http\Controllers\Admin\MenuItemController::store">store</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuItemController.php.html#55"><abbr title="App\Http\Controllers\Admin\MenuItemController::edit">edit</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuItemController.php.html#65"><abbr title="App\Http\Controllers\Admin\MenuItemController::update">update</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuItemController.php.html#90"><abbr title="App\Http\Controllers\Admin\MenuItemController::destroy">destroy</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/PromotionController.php.html#25"><abbr title="App\Http\Controllers\Admin\PromotionController::create">create</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/PromotionController.php.html#30"><abbr title="App\Http\Controllers\Admin\PromotionController::store">store</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/PromotionController.php.html#35"><abbr title="App\Http\Controllers\Admin\PromotionController::edit">edit</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/PromotionController.php.html#40"><abbr title="App\Http\Controllers\Admin\PromotionController::update">update</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/PromotionController.php.html#45"><abbr title="App\Http\Controllers\Admin\PromotionController::destroy">destroy</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/LoginController.php.html#13"><abbr title="App\Http\Controllers\Auth\LoginController::create">create</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/LoginController.php.html#20"><abbr title="App\Http\Controllers\Auth\LoginController::store">store</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/LoginController.php.html#39"><abbr title="App\Http\Controllers\Auth\LoginController::destroy">destroy</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/PasswordResetController.php.html#13"><abbr title="App\Http\Controllers\Auth\PasswordResetController::request">request</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/PasswordResetController.php.html#18"><abbr title="App\Http\Controllers\Auth\PasswordResetController::email">email</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/PasswordResetController.php.html#30"><abbr title="App\Http\Controllers\Auth\PasswordResetController::reset">reset</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/PasswordResetController.php.html#40"><abbr title="App\Http\Controllers\Auth\PasswordResetController::update">update</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/RegisterController.php.html#13"><abbr title="App\Http\Controllers\Auth\RegisterController::create">create</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/RegisterController.php.html#20"><abbr title="App\Http\Controllers\Auth\RegisterController::store">store</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Acceuil.php.html#14"><abbr title="App\Http\Controllers\Etudiant\AccueilController::index">index</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/CartController.php.html#15"><abbr title="App\Http\Controllers\Etudiant\CartController::index">index</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/CartController.php.html#26"><abbr title="App\Http\Controllers\Etudiant\CartController::add">add</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/CartController.php.html#63"><abbr title="App\Http\Controllers\Etudiant\CartController::remove">remove</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/CartController.php.html#78"><abbr title="App\Http\Controllers\Etudiant\CartController::calculateTotal">calculateTotal</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Cookies.php.html#10"><abbr title="App\Http\Controllers\CookieController::store">store</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/LoyaltyController.php.html#15"><abbr title="App\Http\Controllers\Etudiant\LoyaltyController::index">index</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/MenuController.php.html#16"><abbr title="App\Http\Controllers\Etudiant\MenuController::index">index</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/OrderController.php.html#19"><abbr title="App\Http\Controllers\Etudiant\OrderController::store">store</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Parrainage.php.html#17"><abbr title="App\Http\Controllers\Etudiant\ParrainageController::generer">generer</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Parrainage.php.html#42"><abbr title="App\Http\Controllers\Etudiant\ParrainageController::utiliser">utiliser</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/ReclamationController.php.html#16"><abbr title="App\Http\Controllers\Etudiant\ReclamationController::index">index</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/ReclamationController.php.html#30"><abbr title="App\Http\Controllers\Etudiant\ReclamationController::create">create</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/ReclamationController.php.html#44"><abbr title="App\Http\Controllers\Etudiant\ReclamationController::store">store</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Requests/StoreUserRequest.php.html#16"><abbr title="App\Http\Requests\StoreUserRequest::authorize">authorize</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Requests/StoreUserRequest.php.html#26"><abbr title="App\Http\Requests\StoreUserRequest::rules">rules</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Http/Requests/StoreUserRequest.php.html#45"><abbr title="App\Http\Requests\StoreUserRequest::prepareForValidation">prepareForValidation</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/AppSetting.php.html#17"><abbr title="App\Models\AppSetting::updatedBy">updatedBy</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Claim.php.html#15"><abbr title="App\Models\Claim::order">order</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Claim.php.html#20"><abbr title="App\Models\Claim::user">user</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Claim.php.html#25"><abbr title="App\Models\Claim::handler">handler</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/CookieConsent.php.html#21"><abbr title="App\Models\CookieConsent::user">user</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/LoyaltyAccount.php.html#21"><abbr title="App\Models\LoyaltyAccount::user">user</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/LoyaltyTransaction.php.html#22"><abbr title="App\Models\LoyaltyTransaction::user">user</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/LoyaltyTransaction.php.html#27"><abbr title="App\Models\LoyaltyTransaction::order">order</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/MenuCategory.php.html#18"><abbr title="App\Models\MenuCategory::items">items</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/MenuItem.php.html#21"><abbr title="App\Models\MenuItem::category">category</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Order.php.html#25"><abbr title="App\Models\Order::user">user</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Order.php.html#30"><abbr title="App\Models\Order::items">items</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Order.php.html#35"><abbr title="App\Models\Order::payment">payment</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Order.php.html#40"><abbr title="App\Models\Order::loyaltyTransactions">loyaltyTransactions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Order.php.html#45"><abbr title="App\Models\Order::claims">claims</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/OrderItem.php.html#17"><abbr title="App\Models\OrderItem::order">order</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/OrderItem.php.html#22"><abbr title="App\Models\OrderItem::menuItem">menuItem</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Payment.php.html#22"><abbr title="App\Models\Payment::order">order</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Referral.php.html#22"><abbr title="App\Models\Referral::referrer">referrer</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Referral.php.html#27"><abbr title="App\Models\Referral::referred">referred</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Referral.php.html#32"><abbr title="App\Models\Referral::code">code</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/ReferralCode.php.html#20"><abbr title="App\Models\ReferralCode::user">user</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/ReferralCode.php.html#25"><abbr title="App\Models\ReferralCode::referrals">referrals</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/Role.php.html#15"><abbr title="App\Models\Role::users">users</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/User.php.html#36"><abbr title="App\Models\User::loyaltyAccount">loyaltyAccount</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/User.php.html#41"><abbr title="App\Models\User::referralCode">referralCode</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/User.php.html#46"><abbr title="App\Models\User::orders">orders</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/User.php.html#51"><abbr title="App\Models\User::loyaltyTransactions">loyaltyTransactions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/User.php.html#56"><abbr title="App\Models\User::claims">claims</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/User.php.html#62"><abbr title="App\Models\User::referralsMade">referralsMade</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Models/User.php.html#67"><abbr title="App\Models\User::referralReceived">referralReceived</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Providers/AppServiceProvider.php.html#22"><abbr title="App\Providers\AppServiceProvider::boot">boot</abbr></a></td><td class="text-right">33%</td></tr>
+       <tr><td><a href="Http/Middleware/EnsureIsAdmin.php.html#13"><abbr title="App\Http\Middleware\EnsureIsAdmin::handle">handle</abbr></a></td><td class="text-right">80%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuItemController.php.html#10"><abbr title="App\Http\Controllers\Admin\MenuItemController::index">index</abbr></a></td><td class="text-right">83%</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/ClaimController.php.html#12"><abbr title="App\Http\Controllers\Admin\ClaimController::index">index</abbr></a></td><td class="text-right">88%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Http/Controllers/Admin/DashboardController.php.html#18"><abbr title="App\Http\Controllers\Admin\DashboardController::index">index</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Parrainage.php.html#42"><abbr title="App\Http\Controllers\Etudiant\ParrainageController::utiliser">utiliser</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Acceuil.php.html#14"><abbr title="App\Http\Controllers\Etudiant\AccueilController::index">index</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/OrderController.php.html#19"><abbr title="App\Http\Controllers\Etudiant\OrderController::store">store</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/DashboardController.php.html#70"><abbr title="App\Http\Controllers\Admin\DashboardController::gerantDashboard">gerantDashboard</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/DashboardController.php.html#91"><abbr title="App\Http\Controllers\Admin\DashboardController::employeeDashboard">employeeDashboard</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/DashboardController.php.html#113"><abbr title="App\Http\Controllers\Admin\DashboardController::getTopClients">getTopClients</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/CartController.php.html#26"><abbr title="App\Http\Controllers\Etudiant\CartController::add">add</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Parrainage.php.html#17"><abbr title="App\Http\Controllers\Etudiant\ParrainageController::generer">generer</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Http/Requests/StoreUserRequest.php.html#45"><abbr title="App\Http\Requests\StoreUserRequest::prepareForValidation">prepareForValidation</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuItemController.php.html#29"><abbr title="App\Http\Controllers\Admin\MenuItemController::store">store</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuItemController.php.html#65"><abbr title="App\Http\Controllers\Admin\MenuItemController::update">update</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/LoginController.php.html#20"><abbr title="App\Http\Controllers\Auth\LoginController::store">store</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/PasswordResetController.php.html#18"><abbr title="App\Http\Controllers\Auth\PasswordResetController::email">email</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Http/Controllers/Auth/PasswordResetController.php.html#40"><abbr title="App\Http\Controllers\Auth\PasswordResetController::update">update</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/CartController.php.html#63"><abbr title="App\Http\Controllers\Etudiant\CartController::remove">remove</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/CartController.php.html#78"><abbr title="App\Http\Controllers\Etudiant\CartController::calculateTotal">calculateTotal</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Http/Controllers/Etudiant/Cookies.php.html#10"><abbr title="App\Http\Controllers\CookieController::store">store</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Http/Middleware/EnsureIsAdmin.php.html#13"><abbr title="App\Http\Middleware\EnsureIsAdmin::handle">handle</abbr></a></td><td class="text-right">3</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/MenuItemController.php.html#10"><abbr title="App\Http\Controllers\Admin\MenuItemController::index">index</abbr></a></td><td class="text-right">2</td></tr>
+       <tr><td><a href="Http/Controllers/Admin/ClaimController.php.html#12"><abbr title="App\Http\Controllers\Admin\ClaimController::index">index</abbr></a></td><td class="text-right">2</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 11.0.12</a> using <a href="https://www.php.net/" target="_top">PHP 8.2.12</a> and <a href="https://phpunit.de/">PHPUnit 11.5.57</a> at Wed Oct 21 16:29:26 UTC 2026.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="_js/jquery.min.js?v=11.0.12" type="text/javascript"></script>
+  <script src="_js/d3.min.js?v=11.0.12" type="text/javascript"></script>
+  <script src="_js/nv.d3.min.js?v=11.0.12" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([26,0,3,1,1,1,0,1,0,1,1,2], "Class Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([82,0,0,0,1,0,0,0,0,3,0,11], "Method Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
+
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[16.666666666666664,2,"<a href=\"Http\/Controllers\/Admin\/AppSettingController.php.html#7\">App\\Http\\Controllers\\Admin\\AppSettingController<\/a>"],[34.78260869565217,4,"<a href=\"Http\/Controllers\/Admin\/ClaimController.php.html#9\">App\\Http\\Controllers\\Admin\\ClaimController<\/a>"],[22.950819672131146,25,"<a href=\"Http\/Controllers\/Admin\/DashboardController.php.html#13\">App\\Http\\Controllers\\Admin\\DashboardController<\/a>"],[91.37931034482759,12,"<a href=\"Http\/Controllers\/Admin\/EmployeeController.php.html#12\">App\\Http\\Controllers\\Admin\\EmployeeController<\/a>"],[0,6,"<a href=\"Http\/Controllers\/Admin\/MenuCategoryController.php.html#8\">App\\Http\\Controllers\\Admin\\MenuCategoryController<\/a>"],[10.416666666666668,9,"<a href=\"Http\/Controllers\/Admin\/MenuItemController.php.html#8\">App\\Http\\Controllers\\Admin\\MenuItemController<\/a>"],[66.66666666666666,6,"<a href=\"Http\/Controllers\/Admin\/PromotionController.php.html#8\">App\\Http\\Controllers\\Admin\\PromotionController<\/a>"],[0,4,"<a href=\"Http\/Controllers\/Auth\/LoginController.php.html#10\">App\\Http\\Controllers\\Auth\\LoginController<\/a>"],[0,6,"<a href=\"Http\/Controllers\/Auth\/PasswordResetController.php.html#10\">App\\Http\\Controllers\\Auth\\PasswordResetController<\/a>"],[0,2,"<a href=\"Http\/Controllers\/Auth\/RegisterController.php.html#10\">App\\Http\\Controllers\\Auth\\RegisterController<\/a>"],[100,0,"<a href=\"Http\/Controllers\/Controller.php.html#5\">App\\Http\\Controllers\\Controller<\/a>"],[0,6,"<a href=\"Http\/Controllers\/Etudiant\/Acceuil.php.html#12\">App\\Http\\Controllers\\Etudiant\\AccueilController<\/a>"],[0,8,"<a href=\"Http\/Controllers\/Etudiant\/CartController.php.html#10\">App\\Http\\Controllers\\Etudiant\\CartController<\/a>"],[0,2,"<a href=\"Http\/Controllers\/Etudiant\/Cookies.php.html#8\">App\\Http\\Controllers\\CookieController<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Etudiant\/LoyaltyController.php.html#10\">App\\Http\\Controllers\\Etudiant\\LoyaltyController<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Etudiant\/MenuController.php.html#11\">App\\Http\\Controllers\\Etudiant\\MenuController<\/a>"],[0,6,"<a href=\"Http\/Controllers\/Etudiant\/OrderController.php.html#14\">App\\Http\\Controllers\\Etudiant\\OrderController<\/a>"],[0,10,"<a href=\"Http\/Controllers\/Etudiant\/Parrainage.php.html#11\">App\\Http\\Controllers\\Etudiant\\ParrainageController<\/a>"],[0,3,"<a href=\"Http\/Controllers\/Etudiant\/ReclamationController.php.html#11\">App\\Http\\Controllers\\Etudiant\\ReclamationController<\/a>"],[80,3,"<a href=\"Http\/Middleware\/EnsureIsAdmin.php.html#9\">App\\Http\\Middleware\\EnsureIsAdmin<\/a>"],[0,5,"<a href=\"Http\/Requests\/StoreUserRequest.php.html#11\">App\\Http\\Requests\\StoreUserRequest<\/a>"],[0,1,"<a href=\"Models\/AppSetting.php.html#8\">App\\Models\\AppSetting<\/a>"],[0,3,"<a href=\"Models\/Claim.php.html#8\">App\\Models\\Claim<\/a>"],[0,1,"<a href=\"Models\/CookieConsent.php.html#8\">App\\Models\\CookieConsent<\/a>"],[0,1,"<a href=\"Models\/LoyaltyAccount.php.html#8\">App\\Models\\LoyaltyAccount<\/a>"],[0,2,"<a href=\"Models\/LoyaltyTransaction.php.html#8\">App\\Models\\LoyaltyTransaction<\/a>"],[0,1,"<a href=\"Models\/MenuCategory.php.html#8\">App\\Models\\MenuCategory<\/a>"],[0,1,"<a href=\"Models\/MenuItem.php.html#8\">App\\Models\\MenuItem<\/a>"],[0,5,"<a href=\"Models\/Order.php.html#10\">App\\Models\\Order<\/a>"],[0,2,"<a href=\"Models\/OrderItem.php.html#8\">App\\Models\\OrderItem<\/a>"],[0,1,"<a href=\"Models\/Payment.php.html#8\">App\\Models\\Payment<\/a>"],[100,0,"<a href=\"Models\/Promotion.php.html#7\">App\\Models\\Promotion<\/a>"],[0,3,"<a href=\"Models\/Referral.php.html#8\">App\\Models\\Referral<\/a>"],[0,2,"<a href=\"Models\/ReferralCode.php.html#9\">App\\Models\\ReferralCode<\/a>"],[0,1,"<a href=\"Models\/Role.php.html#8\">App\\Models\\Role<\/a>"],[12.5,8,"<a href=\"Models\/User.php.html#13\">App\\Models\\User<\/a>"],[42.857142857142854,2,"<a href=\"Providers\/AppServiceProvider.php.html#8\">App\\Providers\\AppServiceProvider<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[100,1,"<a href=\"Http\/Controllers\/Admin\/AppSettingController.php.html#9\">App\\Http\\Controllers\\Admin\\AppSettingController::index<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/AppSettingController.php.html#14\">App\\Http\\Controllers\\Admin\\AppSettingController::update<\/a>"],[88.88888888888889,2,"<a href=\"Http\/Controllers\/Admin\/ClaimController.php.html#12\">App\\Http\\Controllers\\Admin\\ClaimController::index<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/ClaimController.php.html#30\">App\\Http\\Controllers\\Admin\\ClaimController::edit<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/ClaimController.php.html#38\">App\\Http\\Controllers\\Admin\\ClaimController::update<\/a>"],[0,7,"<a href=\"Http\/Controllers\/Admin\/DashboardController.php.html#18\">App\\Http\\Controllers\\Admin\\DashboardController::index<\/a>"],[100,1,"<a href=\"Http\/Controllers\/Admin\/DashboardController.php.html#40\">App\\Http\\Controllers\\Admin\\DashboardController::stats<\/a>"],[100,5,"<a href=\"Http\/Controllers\/Admin\/DashboardController.php.html#48\">App\\Http\\Controllers\\Admin\\DashboardController::adminDashboard<\/a>"],[0,4,"<a href=\"Http\/Controllers\/Admin\/DashboardController.php.html#70\">App\\Http\\Controllers\\Admin\\DashboardController::gerantDashboard<\/a>"],[0,4,"<a href=\"Http\/Controllers\/Admin\/DashboardController.php.html#91\">App\\Http\\Controllers\\Admin\\DashboardController::employeeDashboard<\/a>"],[0,4,"<a href=\"Http\/Controllers\/Admin\/DashboardController.php.html#113\">App\\Http\\Controllers\\Admin\\DashboardController::getTopClients<\/a>"],[100,1,"<a href=\"Http\/Controllers\/Admin\/EmployeeController.php.html#17\">App\\Http\\Controllers\\Admin\\EmployeeController::getTargetRole<\/a>"],[100,1,"<a href=\"Http\/Controllers\/Admin\/EmployeeController.php.html#23\">App\\Http\\Controllers\\Admin\\EmployeeController::index<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/EmployeeController.php.html#34\">App\\Http\\Controllers\\Admin\\EmployeeController::create<\/a>"],[100,2,"<a href=\"Http\/Controllers\/Admin\/EmployeeController.php.html#41\">App\\Http\\Controllers\\Admin\\EmployeeController::store<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/EmployeeController.php.html#73\">App\\Http\\Controllers\\Admin\\EmployeeController::edit<\/a>"],[100,3,"<a href=\"Http\/Controllers\/Admin\/EmployeeController.php.html#81\">App\\Http\\Controllers\\Admin\\EmployeeController::update<\/a>"],[100,3,"<a href=\"Http\/Controllers\/Admin\/EmployeeController.php.html#106\">App\\Http\\Controllers\\Admin\\EmployeeController::destroy<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/MenuCategoryController.php.html#11\">App\\Http\\Controllers\\Admin\\MenuCategoryController::index<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/MenuCategoryController.php.html#17\">App\\Http\\Controllers\\Admin\\MenuCategoryController::create<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/MenuCategoryController.php.html#22\">App\\Http\\Controllers\\Admin\\MenuCategoryController::store<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/MenuCategoryController.php.html#35\">App\\Http\\Controllers\\Admin\\MenuCategoryController::edit<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/MenuCategoryController.php.html#41\">App\\Http\\Controllers\\Admin\\MenuCategoryController::update<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/MenuCategoryController.php.html#54\">App\\Http\\Controllers\\Admin\\MenuCategoryController::destroy<\/a>"],[83.33333333333334,2,"<a href=\"Http\/Controllers\/Admin\/MenuItemController.php.html#10\">App\\Http\\Controllers\\Admin\\MenuItemController::index<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/MenuItemController.php.html#23\">App\\Http\\Controllers\\Admin\\MenuItemController::create<\/a>"],[0,2,"<a href=\"Http\/Controllers\/Admin\/MenuItemController.php.html#29\">App\\Http\\Controllers\\Admin\\MenuItemController::store<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/MenuItemController.php.html#55\">App\\Http\\Controllers\\Admin\\MenuItemController::edit<\/a>"],[0,2,"<a href=\"Http\/Controllers\/Admin\/MenuItemController.php.html#65\">App\\Http\\Controllers\\Admin\\MenuItemController::update<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/MenuItemController.php.html#90\">App\\Http\\Controllers\\Admin\\MenuItemController::destroy<\/a>"],[100,1,"<a href=\"Http\/Controllers\/Admin\/PromotionController.php.html#10\">App\\Http\\Controllers\\Admin\\PromotionController::index<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/PromotionController.php.html#25\">App\\Http\\Controllers\\Admin\\PromotionController::create<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/PromotionController.php.html#30\">App\\Http\\Controllers\\Admin\\PromotionController::store<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/PromotionController.php.html#35\">App\\Http\\Controllers\\Admin\\PromotionController::edit<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/PromotionController.php.html#40\">App\\Http\\Controllers\\Admin\\PromotionController::update<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Admin\/PromotionController.php.html#45\">App\\Http\\Controllers\\Admin\\PromotionController::destroy<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Auth\/LoginController.php.html#13\">App\\Http\\Controllers\\Auth\\LoginController::create<\/a>"],[0,2,"<a href=\"Http\/Controllers\/Auth\/LoginController.php.html#20\">App\\Http\\Controllers\\Auth\\LoginController::store<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Auth\/LoginController.php.html#39\">App\\Http\\Controllers\\Auth\\LoginController::destroy<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Auth\/PasswordResetController.php.html#13\">App\\Http\\Controllers\\Auth\\PasswordResetController::request<\/a>"],[0,2,"<a href=\"Http\/Controllers\/Auth\/PasswordResetController.php.html#18\">App\\Http\\Controllers\\Auth\\PasswordResetController::email<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Auth\/PasswordResetController.php.html#30\">App\\Http\\Controllers\\Auth\\PasswordResetController::reset<\/a>"],[0,2,"<a href=\"Http\/Controllers\/Auth\/PasswordResetController.php.html#40\">App\\Http\\Controllers\\Auth\\PasswordResetController::update<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Auth\/RegisterController.php.html#13\">App\\Http\\Controllers\\Auth\\RegisterController::create<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Auth\/RegisterController.php.html#20\">App\\Http\\Controllers\\Auth\\RegisterController::store<\/a>"],[0,6,"<a href=\"Http\/Controllers\/Etudiant\/Acceuil.php.html#14\">App\\Http\\Controllers\\Etudiant\\AccueilController::index<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Etudiant\/CartController.php.html#15\">App\\Http\\Controllers\\Etudiant\\CartController::index<\/a>"],[0,3,"<a href=\"Http\/Controllers\/Etudiant\/CartController.php.html#26\">App\\Http\\Controllers\\Etudiant\\CartController::add<\/a>"],[0,2,"<a href=\"Http\/Controllers\/Etudiant\/CartController.php.html#63\">App\\Http\\Controllers\\Etudiant\\CartController::remove<\/a>"],[0,2,"<a href=\"Http\/Controllers\/Etudiant\/CartController.php.html#78\">App\\Http\\Controllers\\Etudiant\\CartController::calculateTotal<\/a>"],[0,2,"<a href=\"Http\/Controllers\/Etudiant\/Cookies.php.html#10\">App\\Http\\Controllers\\CookieController::store<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Etudiant\/LoyaltyController.php.html#15\">App\\Http\\Controllers\\Etudiant\\LoyaltyController::index<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Etudiant\/MenuController.php.html#16\">App\\Http\\Controllers\\Etudiant\\MenuController::index<\/a>"],[0,6,"<a href=\"Http\/Controllers\/Etudiant\/OrderController.php.html#19\">App\\Http\\Controllers\\Etudiant\\OrderController::store<\/a>"],[0,3,"<a href=\"Http\/Controllers\/Etudiant\/Parrainage.php.html#17\">App\\Http\\Controllers\\Etudiant\\ParrainageController::generer<\/a>"],[0,7,"<a href=\"Http\/Controllers\/Etudiant\/Parrainage.php.html#42\">App\\Http\\Controllers\\Etudiant\\ParrainageController::utiliser<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Etudiant\/ReclamationController.php.html#16\">App\\Http\\Controllers\\Etudiant\\ReclamationController::index<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Etudiant\/ReclamationController.php.html#30\">App\\Http\\Controllers\\Etudiant\\ReclamationController::create<\/a>"],[0,1,"<a href=\"Http\/Controllers\/Etudiant\/ReclamationController.php.html#44\">App\\Http\\Controllers\\Etudiant\\ReclamationController::store<\/a>"],[80,3,"<a href=\"Http\/Middleware\/EnsureIsAdmin.php.html#13\">App\\Http\\Middleware\\EnsureIsAdmin::handle<\/a>"],[0,1,"<a href=\"Http\/Requests\/StoreUserRequest.php.html#16\">App\\Http\\Requests\\StoreUserRequest::authorize<\/a>"],[0,1,"<a href=\"Http\/Requests\/StoreUserRequest.php.html#26\">App\\Http\\Requests\\StoreUserRequest::rules<\/a>"],[0,3,"<a href=\"Http\/Requests\/StoreUserRequest.php.html#45\">App\\Http\\Requests\\StoreUserRequest::prepareForValidation<\/a>"],[0,1,"<a href=\"Models\/AppSetting.php.html#17\">App\\Models\\AppSetting::updatedBy<\/a>"],[0,1,"<a href=\"Models\/Claim.php.html#15\">App\\Models\\Claim::order<\/a>"],[0,1,"<a href=\"Models\/Claim.php.html#20\">App\\Models\\Claim::user<\/a>"],[0,1,"<a href=\"Models\/Claim.php.html#25\">App\\Models\\Claim::handler<\/a>"],[0,1,"<a href=\"Models\/CookieConsent.php.html#21\">App\\Models\\CookieConsent::user<\/a>"],[0,1,"<a href=\"Models\/LoyaltyAccount.php.html#21\">App\\Models\\LoyaltyAccount::user<\/a>"],[0,1,"<a href=\"Models\/LoyaltyTransaction.php.html#22\">App\\Models\\LoyaltyTransaction::user<\/a>"],[0,1,"<a href=\"Models\/LoyaltyTransaction.php.html#27\">App\\Models\\LoyaltyTransaction::order<\/a>"],[0,1,"<a href=\"Models\/MenuCategory.php.html#18\">App\\Models\\MenuCategory::items<\/a>"],[0,1,"<a href=\"Models\/MenuItem.php.html#21\">App\\Models\\MenuItem::category<\/a>"],[0,1,"<a href=\"Models\/Order.php.html#25\">App\\Models\\Order::user<\/a>"],[0,1,"<a href=\"Models\/Order.php.html#30\">App\\Models\\Order::items<\/a>"],[0,1,"<a href=\"Models\/Order.php.html#35\">App\\Models\\Order::payment<\/a>"],[0,1,"<a href=\"Models\/Order.php.html#40\">App\\Models\\Order::loyaltyTransactions<\/a>"],[0,1,"<a href=\"Models\/Order.php.html#45\">App\\Models\\Order::claims<\/a>"],[0,1,"<a href=\"Models\/OrderItem.php.html#17\">App\\Models\\OrderItem::order<\/a>"],[0,1,"<a href=\"Models\/OrderItem.php.html#22\">App\\Models\\OrderItem::menuItem<\/a>"],[0,1,"<a href=\"Models\/Payment.php.html#22\">App\\Models\\Payment::order<\/a>"],[0,1,"<a href=\"Models\/Referral.php.html#22\">App\\Models\\Referral::referrer<\/a>"],[0,1,"<a href=\"Models\/Referral.php.html#27\">App\\Models\\Referral::referred<\/a>"],[0,1,"<a href=\"Models\/Referral.php.html#32\">App\\Models\\Referral::code<\/a>"],[0,1,"<a href=\"Models\/ReferralCode.php.html#20\">App\\Models\\ReferralCode::user<\/a>"],[0,1,"<a href=\"Models\/ReferralCode.php.html#25\">App\\Models\\ReferralCode::referrals<\/a>"],[0,1,"<a href=\"Models\/Role.php.html#15\">App\\Models\\Role::users<\/a>"],[100,1,"<a href=\"Models\/User.php.html#31\">App\\Models\\User::role<\/a>"],[0,1,"<a href=\"Models\/User.php.html#36\">App\\Models\\User::loyaltyAccount<\/a>"],[0,1,"<a href=\"Models\/User.php.html#41\">App\\Models\\User::referralCode<\/a>"],[0,1,"<a href=\"Models\/User.php.html#46\">App\\Models\\User::orders<\/a>"],[0,1,"<a href=\"Models\/User.php.html#51\">App\\Models\\User::loyaltyTransactions<\/a>"],[0,1,"<a href=\"Models\/User.php.html#56\">App\\Models\\User::claims<\/a>"],[0,1,"<a href=\"Models\/User.php.html#62\">App\\Models\\User::referralsMade<\/a>"],[0,1,"<a href=\"Models\/User.php.html#67\">App\\Models\\User::referralReceived<\/a>"],[100,1,"<a href=\"Providers\/AppServiceProvider.php.html#13\">App\\Providers\\AppServiceProvider::register<\/a>"],[33.33333333333333,1,"<a href=\"Providers\/AppServiceProvider.php.html#22\">App\\Providers\\AppServiceProvider::boot<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
+</html>

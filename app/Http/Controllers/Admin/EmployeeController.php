@@ -11,23 +11,38 @@ use Illuminate\Validation\Rules\Password;
 
 class EmployeeController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Méthode privée pour récupérer le rôle cible (employee par défaut, ou gerant)
+     */
+    private function getTargetRole(Request $request)
     {
-        $employeeRole = Role::where('code', 'employee')->firstOrFail();
-        $query = User::where('role_id', $employeeRole->id);
-
-        $employees = $query->orderBy('created_at', 'desc')->get();
-
-        return view('admin.employees.index', compact('employees'));
+        $roleCode = $request->query('role', 'employee');
+        return Role::where('code', $roleCode)->firstOrFail();
     }
 
-    public function create()
+    public function index(Request $request)
     {
-        return view('admin.employees.create');
+        $role = $this->getTargetRole($request);
+        
+        $employees = User::where('role_id', $role->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.employees.index', compact('employees', 'role'));
+    }
+
+    public function create(Request $request)
+    {
+        $role = $this->getTargetRole($request);
+
+        return view('admin.employees.create', compact('role'));
     }
 
     public function store(Request $request)
     {
+        $roleCode = $request->input('role_code', 'employee');
+        $role = Role::where('code', $roleCode)->firstOrFail();
+
         $validated = $request->validate([
             'first_name' => 'required|string|max:80',
             'last_name'  => 'required|string|max:80',
@@ -36,32 +51,36 @@ class EmployeeController extends Controller
             'password'   => ['required', 'string', Password::min(8)->mixedCase()->numbers()],
         ]);
 
-        $employeeRole = Role::where('code', 'employee')->firstOrFail();
+        $hashedPassword = Hash::make($validated['password']);
 
         User::create([
-            'role_id'       => $employeeRole->id,
+            'role_id'       => $role->id,
             'first_name'    => $validated['first_name'],
             'last_name'     => $validated['last_name'],
             'email'         => $validated['email'],
             'phone'         => $validated['phone'] ?? null,
-            'password_hash' => Hash::make($validated['password']),
+            'password'      => $hashedPassword,
+            'password_hash' => $hashedPassword,
             'is_active'     => true,
         ]);
 
-        return redirect()->route('admin.employees.index')
-            ->with('success', 'Le compte employe a ete cree avec succes.');
+        $label = ($role->code === 'gerant') ? 'gérant' : 'employé';
+
+        return redirect()->route('admin.employees.index', ['role' => $role->code])
+            ->with('success', "Le compte {$label} a été créé avec succès.");
     }
 
     public function edit($id)
     {
-        $employee = User::findOrFail($id);
+        $employee = User::with('role')->findOrFail($id);
+        $role = $employee->role;
 
-        return view('admin.employees.edit', compact('employee'));
+        return view('admin.employees.edit', compact('employee', 'role'));
     }
 
     public function update(Request $request, $id)
     {
-        $employee = User::findOrFail($id);
+        $employee = User::with('role')->findOrFail($id);
 
         $validated = $request->validate([
             'first_name' => 'required|string|max:80',
@@ -77,16 +96,22 @@ class EmployeeController extends Controller
             'phone'      => $validated['phone'] ?? null,
         ]);
 
-        return redirect()->route('admin.employees.index')
-            ->with('success', 'Le compte employe a ete mis a jour avec succes.');
+        $roleCode = $employee->role ? $employee->role->code : 'employee';
+        $label = ($roleCode === 'gerant') ? 'gérant' : 'employé';
+
+        return redirect()->route('admin.employees.index', ['role' => $roleCode])
+            ->with('success', "Le compte {$label} a été mis à jour avec succès.");
     }
 
     public function destroy($id)
     {
-        $employee = User::findOrFail($id);
+        $employee = User::with('role')->findOrFail($id);
+        $roleCode = $employee->role ? $employee->role->code : 'employee';
+        $label = ($roleCode === 'gerant') ? 'gérant' : 'employé';
+
         $employee->delete();
 
-        return redirect()->route('admin.employees.index')
-            ->with('success', 'L\'employe a ete supprime.');
+        return redirect()->route('admin.employees.index', ['role' => $roleCode])
+            ->with('success', "Le {$label} a été supprimé.");
     }
 }
