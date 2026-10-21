@@ -19,6 +19,11 @@ use App\Http\Controllers\Admin\ClaimController;
 use App\Http\Controllers\Admin\AppSettingController;
 use App\Http\Controllers\Admin\DashboardController;
 
+use App\Http\Controllers\Employee\EmployeeOrderController;
+use App\Http\Controllers\Employee\EmployeeMenuController;
+use App\Http\Controllers\Employee\EmployeeReclamationController;
+use App\Http\Controllers\Employee\EmployeeStatController;
+
 // routes accessibles uniquement quand on est pas connecté
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
@@ -37,12 +42,11 @@ Route::middleware('guest')->group(function () {
 // routes accessibles uniquement quand on est connecté
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    Route::post('/dashboard', fn () => view('dashboard'))->name('dashboard');
 });
 
 // ESPACE ÉTUDIANT 
 
-Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(function () {
+Route::middleware(['auth', 'role:student'])->prefix('etudiant')->name('etudiant.')->group(function () {
     
     // Affichage du Menu
     Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
@@ -82,4 +86,24 @@ Route::middleware(['auth', 'role:admin']) //Securite : Seul un admin connecte pe
         Route::resource('claims', ClaimController::class)->only(['index', 'edit', 'update']);
         Route::resource('settings', AppSettingController::class)->only(['index', 'update']);
         
+    });
+
+Route::middleware(['auth:sanctum', 'role:employee'])
+    ->prefix('employee')
+    ->name('employee.')
+    ->group(function () {
+        Route::get('/orders', [EmployeeOrderController::class, 'index']);
+        Route::get('/orders/{id}', [EmployeeOrderController::class, 'show']);
+        Route::patch('/orders/{id}/validate', [EmployeeOrderController::class, 'validateOrder']);
+        Route::patch('/orders/{id}/served', [EmployeeOrderController::class, 'markAsServed']);
+
+        Route::get('/menu', [EmployeeMenuController::class, 'index']);
+        Route::patch('/menu/{id}/availability', [EmployeeMenuController::class, 'updateAvailability']);
+        Route::patch('/menu/{id}/plat-du-jour', [EmployeeMenuController::class, 'updatePlatDuJour']);
+
+        Route::get('/reclamations', [EmployeeReclamationController::class, 'index']);
+        Route::get('/reclamations/{id}', [EmployeeReclamationController::class, 'show']);
+        Route::post('/reclamations/{id}/reply', [EmployeeReclamationController::class, 'replyToReclamation']);
+
+        Route::get('/stats/weekly', [EmployeeStatController::class, 'weeklyStats']);
     });

@@ -19,7 +19,7 @@ class AppSettingController extends Controller  //Controleur des reglages generau
         ]);
         $setting->update([  // Mise a jour de la valeur et de l'historique d'auteur
             'setting_value' => $validated['setting_value'],  // Enregistrement de la nouvelle valeur du parametre
-            'updated_by'    => auth()->id(), // Tracabilite de l'administrateur qui fait la modification
+            'updated_by'    => auth()->id, // Tracabilite de l'administrateur qui fait la modification
         ]);
         return redirect()->route('admin.settings.index') // Redirection vers la page de reglages avec confirmation
             ->with('success', "Le paramètre '{$key}' a été mis à jour.");

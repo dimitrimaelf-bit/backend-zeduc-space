@@ -24,6 +24,7 @@ class RegisterController extends Controller
     {
         $data = $request->validated();
 
+        // on utilise une transaction car le traitement de l'inscription et du parrainage doit être atomique : soit tout réussit, soit rien n'est enregistré.
         $user = DB::transaction(function () use ($data) {
             $studentRole = Role::where('code', 'student')->firstOrFail();
             $referralCode = isset($data['referral_code'])

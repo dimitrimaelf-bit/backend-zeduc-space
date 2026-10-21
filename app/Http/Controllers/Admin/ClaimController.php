@@ -39,6 +39,15 @@ class ClaimController extends Controller
     {
         $claim = Claim::findOrFail($id);
 
+        $request->merge([
+            'status' => match ($request->input('status')) {
+                'en_attente' => 'open',
+                'résolu' => 'resolved',
+                default => $request->input('status'),
+            },
+            'response' => $request->input('response', $request->input('admin_response')),
+        ]);
+
         $validated = $request->validate([
             'status'   => 'required|in:open,in_progress,resolved,rejected',
             'response' => 'required|string',
@@ -47,7 +56,7 @@ class ClaimController extends Controller
         $claim->update([
             'status'     => $validated['status'],
             'response'   => $validated['response'],
-            'handled_by' => auth()->id(),
+            'handled_by' => auth()->id,
         ]);
 
         return redirect()->route('admin.claims.index')
