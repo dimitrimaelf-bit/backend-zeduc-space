@@ -13,6 +13,9 @@
             <p class="text-muted small text-center mb-4">Inscrivez-vous pour commander et suivre vos points.</p>
             <form method="POST" action="{{ route('register') }}">
                 @csrf
+
+                <!-- Le rôle par défaut est étudiant -->
+                <input type="hidden" name="role_id" value="student">
                
                 <!-- Nom et Prénom -->
                 <div class="row mb-3">
