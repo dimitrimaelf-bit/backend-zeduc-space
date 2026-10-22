@@ -1,87 +1,44 @@
 @extends('layouts.mmm')
 
-@section('titre', 'Configuration Générale - ZeDuc@Space')
+@section('titre', 'Configuration générale - ZeDuc@Space')
 
 @section('contenu')
-<div class="settings-wrapper">
+@php
+    $settingValue = fn ($key, $fallback) => trim($settings->get($key)?->setting_value ?? $fallback);
+@endphp
+<div class="container-fluid px-0">
+    <div class="mb-4"><h1 class="h3 fw-bold mb-1">Configuration générale</h1><p class="text-muted">Horaires du restaurant et règles du programme de fidélité.</p></div>
+    @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
 
-    <!-- Titre principal -->
-    <div class="mb-4">
-        <h1 class="font-serif fw-bold text-dark mb-1" style="font-size: 30px; font-family: Georgia, serif;">Configuration Générale de l'Application</h1>
-        <p class="text-muted mb-0" style="font-size: 13.5px;">Gérez les paramètres de votre restaurant, du programme de fidélité et de parrainage, ainsi que les aspects légaux et RGPD.</p>
+    <h2 class="h5 fw-bold mb-3">Restaurant & horaires</h2>
+    <div class="row g-3 mb-4">
+        @foreach(['restaurant_open' => ['Heure d’ouverture', '08:00'], 'restaurant_close' => ['Heure de fermeture', '22:00']] as $key => [$label, $fallback])
+            <div class="col-md-6"><form method="POST" action="{{ route('admin.settings.update', $key) }}" class="bg-white border rounded-2 p-3">@csrf @method('PUT')<label for="{{ $key }}" class="form-label">{{ $label }}</label><div class="input-group"><input id="{{ $key }}" type="time" name="setting_value" value="{{ old('setting_value', $settingValue($key, $fallback)) }}" class="form-control @error('setting_value') is-invalid @enderror" required><button class="btn btn-dark" type="submit">Enregistrer</button></div>@error('setting_value')<div class="text-danger small mt-1">{{ $message }}</div>@enderror</form></div>
+        @endforeach
     </div>
 
-    <!-- Onglets -->
-    <div class="bg-white p-2 rounded-3 shadow-sm d-inline-flex gap-2 mb-4">
-        <button class="btn text-white px-3 py-2 fw-medium" style="background-color: #a38959; font-size: 13px;"><i class="bi bi-calendar-event me-2"></i>Restaurant & Horaires</button>
-        <button class="btn btn-light text-muted px-3 py-2 fw-medium" style="font-size: 13px;"><i class="bi bi-star me-2"></i>Fidélité & Parrainage</button>
-        <button class="btn btn-light text-muted px-3 py-2 fw-medium" style="font-size: 13px;"><i class="bi bi-shield-check me-2"></i>RGPD / Légal</button>
+    <h2 class="h5 fw-bold mb-3">Fidélité & parrainage</h2>
+    <div class="row g-3">
+        @foreach([
+            'loyalty_fcfa_per_point' => ['Dépense pour gagner un point', '1000', 'FCFA'],
+            'loyalty_points_per_1000_fcfa_discount' => ['Points requis pour une remise', '15', 'points'],
+            'loyalty_discount_fcfa' => ['Montant de la remise', '1000', 'FCFA'],
+            'loyalty_points_expiry_months' => ['Durée de validité des points', '12', 'mois'],
+        ] as $key => [$label, $fallback, $unit])
+            <div class="col-md-6"><form method="POST" action="{{ route('admin.settings.update', $key) }}" class="bg-white border rounded-2 p-3">@csrf @method('PUT')<label for="{{ $key }}" class="form-label">{{ $label }}</label><div class="input-group"><input id="{{ $key }}" type="number" min="1" step="1" name="setting_value" value="{{ old('setting_value', $settingValue($key, $fallback)) }}" class="form-control @error('setting_value') is-invalid @enderror" required><span class="input-group-text">{{ $unit }}</span><button class="btn btn-dark" type="submit">Enregistrer</button></div>@error('setting_value')<div class="text-danger small mt-1">{{ $message }}</div>@enderror</form></div>
+        @endforeach
     </div>
 
-    <!-- Carte 1 : Horaires -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-        <div class="d-flex justify-content-between align-items-start">
-            <div class="flex-grow-1 me-4">
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    <span class="badge rounded-circle text-white d-flex align-items-center justify-content-center" style="background-color: #a38959; width: 28px; height: 28px;">1</span>
-                    <h5 class="fw-bold text-dark mb-0">Horaires de service du restaurant</h5>
-                </div>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label text-uppercase text-muted fw-bold" style="font-size: 10.5px;">Heure d'ouverture</label>
-                        <input type="text" class="form-control rounded-3 py-2" value="08:00" style="font-size: 13px;">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label text-uppercase text-muted fw-bold" style="font-size: 10.5px;">Heure de fermeture</label>
-                        <input type="text" class="form-control rounded-3 py-2" value="22:00" style="font-size: 13px;">
-                    </div>
-                </div>
-                <small class="text-muted d-block mt-2" style="font-size: 11.5px;">Bloque automatiquement la prise de commande en ligne en dehors de ces heures.</small>
-            </div>
-            <div class="bg-light rounded-4 p-3 d-flex align-items-center justify-content-center" style="width: 100px; height: 90px;">
-                <i class="bi bi-clock fs-2 text-secondary"></i>
-            </div>
-        </div>
+    <h2 class="h5 fw-bold mt-5 mb-3">Confidentialité & légal</h2>
+    <p class="text-muted small">Ces liens et cette version sont utilisés pour tracer le consentement aux cookies.</p>
+    <div class="row g-3">
+        @foreach([
+            'privacy_policy_url' => ['Lien vers la politique de confidentialité', '', 'url', false],
+            'terms_of_service_url' => ['Lien vers les conditions de service', '', 'url', false],
+            'cookie_policy_version' => ['Version de la politique cookies', '1.0', 'text', true],
+        ] as $key => [$label, $fallback, $type, $required])
+            <div class="col-md-6"><form method="POST" action="{{ route('admin.settings.update', $key) }}" class="bg-white border rounded-2 p-3">@csrf @method('PUT')<label for="{{ $key }}" class="form-label">{{ $label }}</label><div class="input-group"><input id="{{ $key }}" type="{{ $type }}" name="setting_value" value="{{ old('setting_value', $settingValue($key, $fallback)) }}" class="form-control @error('setting_value') is-invalid @enderror" @if($required) required @endif><button class="btn btn-dark" type="submit">Enregistrer</button></div>@error('setting_value')<div class="text-danger small mt-1">{{ $message }}</div>@enderror</form></div>
+        @endforeach
     </div>
-
-    <!-- Carte 2 : Règles de fidélité -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-        <div class="d-flex justify-content-between align-items-start">
-            <div class="flex-grow-1 me-4">
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    <span class="badge rounded-circle text-white d-flex align-items-center justify-content-center" style="background-color: #a38959; width: 28px; height: 28px;">2</span>
-                    <h5 class="fw-bold text-dark mb-0">Règles de fidélité & remises</h5>
-                </div>
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label text-uppercase text-muted fw-bold" style="font-size: 10.5px;">Dépense pour 1 point cumulé</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control rounded-start-3" value="1000" style="font-size: 13px;">
-                            <span class="input-group-text bg-light text-muted" style="font-size: 12px;">FCFA</span>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label text-uppercase text-muted fw-bold" style="font-size: 10.5px;">Nombre de points requis pour remise</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control rounded-start-3" value="15" style="font-size: 13px;">
-                            <span class="input-group-text bg-light text-muted" style="font-size: 12px;">Points</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-light rounded-4 p-3 d-flex align-items-center justify-content-center" style="width: 100px; height: 90px;">
-                <i class="bi bi-star fs-2 text-secondary"></i>
-            </div>
-        </div>
-    </div>
-
-    <!-- Boutons d'action -->
-    <div class="d-flex justify-content-end gap-2 mt-4">
-        <button class="btn btn-outline-secondary px-4 py-2" style="border-radius: 8px; font-size: 13px;">Annuler</button>
-        <button class="btn text-white px-4 py-2" style="background-color: #a38959; border-radius: 8px; font-size: 13px;">
-            <i class="bi bi-floppy me-2"></i>Enregistrer les Modifications
-        </button>
-    </div>
-
 </div>
 @endsection

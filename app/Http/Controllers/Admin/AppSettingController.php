@@ -1,27 +1,46 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
+
 use App\Http\Controllers\Controller;
 use App\Models\AppSetting;
 use Illuminate\Http\Request;
 
-class AppSettingController extends Controller  //Controleur des reglages generaux (points de fidelite, horaires)
+class AppSettingController extends Controller
 {
-    public function index()  //affiche la page de configuration Blade et lesvariables de configuration
+    public function index()
     {
-       $settings = AppSetting::with('updatedBy:id,first_name,last_name')->get(); // Recuperation de tous les parametres avec le nom de l'administrateur qui les a modifies
-        return view('admin.settings.index', compact('settings')); // Affichage de la vue de gestion des parametres
+        $settings = AppSetting::with('updatedBy:id,first_name,last_name')
+            ->get()
+            ->keyBy('setting_key');
+
+        return view('admin.settings.index', compact('settings'));
     }
-    public function update(Request $request, $key)  //Enregistre les nouveaux parametres globaux et mise a jour d'une cle de configuration
+
+    public function update(Request $request, string $key)
     {
-         $setting = AppSetting::where('setting_key', $key)->firstOrFail();// Recherche du parametre par sa cle unique dans la table
-        $validated = $request->validate([ // Validation de la valeur soumise
-                'setting_value' => 'required|string', // La valeur doit etre renseignee sous forme de chaine
-        ]);
-        $setting->update([  // Mise a jour de la valeur et de l'historique d'auteur
-            'setting_value' => $validated['setting_value'],  // Enregistrement de la nouvelle valeur du parametre
-            'updated_by'    => auth()->id(), // Tracabilite de l'administrateur qui fait la modification
-        ]);
-        return redirect()->route('admin.settings.index') // Redirection vers la page de reglages avec confirmation
+        $rules = match ($key) {
+            'restaurant_open', 'restaurant_close' => ['required', 'date_format:H:i'],
+            'loyalty_fcfa_per_point',
+            'loyalty_points_per_1000_fcfa_discount',
+            'loyalty_discount_fcfa',
+            'loyalty_points_expiry_months' => ['required', 'integer', 'min:1', 'max:1000000'],
+            'privacy_policy_url', 'terms_of_service_url' => ['nullable', 'url', 'max:500'],
+            'cookie_policy_version' => ['required', 'string', 'max:30'],
+            default => abort(404),
+        };
+
+        $validated = $request->validate(['setting_value' => $rules]);
+
+        AppSetting::updateOrCreate(
+            ['setting_key' => $key],
+            [
+                'setting_value' => (string) $validated['setting_value'],
+                'updated_by' => $request->user()->id,
+            ]
+        );
+
+        return redirect()->route('admin.settings.index')
             ->with('success', "Le paramètre '{$key}' a été mis à jour.");
     }
 }

@@ -40,4 +40,40 @@ class SettingControllerTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.settings.index'));
         $response->assertStatus(200);
     }
+
+    #[Test]
+    public function un_admin_peut_modifier_un_parametre_de_fidelite()
+    {
+        $this->actingAs($this->admin)
+            ->put(route('admin.settings.update', 'loyalty_fcfa_per_point'), [
+                'setting_value' => '1500',
+            ])
+            ->assertRedirect(route('admin.settings.index'));
+
+        $this->assertDatabaseHas('app_settings', [
+            'setting_key' => 'loyalty_fcfa_per_point',
+            'setting_value' => '1500',
+            'updated_by' => $this->admin->id,
+        ]);
+    }
+
+    #[Test]
+    public function un_admin_peut_configurer_les_liens_legaux_et_la_version_cookie()
+    {
+        foreach ([
+            'privacy_policy_url' => 'https://example.test/privacy',
+            'terms_of_service_url' => 'https://example.test/terms',
+            'cookie_policy_version' => '2.1',
+        ] as $key => $value) {
+            $this->actingAs($this->admin)
+                ->put(route('admin.settings.update', $key), ['setting_value' => $value])
+                ->assertRedirect(route('admin.settings.index'));
+
+            $this->assertDatabaseHas('app_settings', [
+                'setting_key' => $key,
+                'setting_value' => $value,
+                'updated_by' => $this->admin->id,
+            ]);
+        }
+    }
 }

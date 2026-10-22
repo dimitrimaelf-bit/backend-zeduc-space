@@ -12,7 +12,7 @@ class LoyaltyTransaction extends Model
 
     protected $fillable = [
         'user_id', 'order_id', 'type', 'points', 
-        'description', 'expires_at'
+        'description', 'expires_at', 'source_transaction_id'
     ];
 
     protected $casts = [

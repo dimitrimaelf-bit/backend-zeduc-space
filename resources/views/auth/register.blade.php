@@ -71,19 +71,20 @@
 
                 <!-- Address -->
                 <div class="mb-3">
-                    <label for="address" class="form-label small text-dark fw-bold">Adresse</label>
-                    <input id="address" name="address" type="text"
+                    <label for="delivery_address" class="form-label small text-dark fw-bold">Adresse de livraison</label>
+                    <input id="delivery_address" name="delivery_address" type="text" value="{{ old('delivery_address') }}"
                         class="form-control rounded-1 border-1 shadow-none py-2">
-                    @error('address')
+                    @error('delivery_address')
                         <div class="text-danger small mt-1">{{ $message }}</div>
                     @enderror
                 </div>
     
                 <!-- Code parrain -->
                 <div class="mb-4">
-                    <label for="parrain" class="form-label small text-dark fw-bold">Code d'un parrain</label>
-                    <input id="parrain" name="parrain" type="text" placeholder="(facultatif)"
+                    <label for="referral_code" class="form-label small text-dark fw-bold">Code d'un parrain</label>
+                    <input id="referral_code" name="referral_code" type="text" value="{{ old('referral_code') }}" placeholder="(facultatif)"
                         class="form-control rounded-1 border-1 shadow-none py-2">
+                    @error('referral_code')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                 </div>
                  
                 <!-- Bouton S'inscrire -->

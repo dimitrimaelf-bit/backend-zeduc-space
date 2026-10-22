@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Promotion extends Model
 {
-    const CREATED_AT = "creted_at";
+    const CREATED_AT = "created_at";
     const UPDATED_AT = null; // Seulement 'created_at'
 
     protected $fillable = [

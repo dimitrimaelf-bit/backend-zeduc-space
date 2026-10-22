@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'Mon Miam Miam') }}</title>
+    <title>@yield('title', config('app.name', 'Mon Miam Miam'))</title>
     <!-- Bootstrap 5 CSS -->
     <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -29,9 +29,10 @@
         }
     </style>
 </head>
-<body>
+<body class="@yield('body-class')">
     
     <!-- Contenu principal -->
+    @yield('full-width')
     @yield('content')
     <!-- Bootstrap JS Bundle (inclut Popper) -->
     <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>

@@ -156,6 +156,25 @@
                 </div>
             </div>
             <p class="text-secondary small mt-3">© 2026 ZEDUC-SP@CE - The Climate of Taste & Chill</p>
+            <div class="d-flex justify-content-center gap-3 small">
+                @if($privacyPolicyUrl)<a href="{{ $privacyPolicyUrl }}" class="text-secondary">Confidentialité</a>@endif
+                @if($termsOfServiceUrl)<a href="{{ $termsOfServiceUrl }}" class="text-secondary">Conditions de service</a>@endif
+            </div>
         </footer>
     </div>
+
+    @if(session('cookie_consent_version') !== $cookiePolicyVersion)
+        <aside class="position-fixed bottom-0 start-0 end-0 bg-white border-top shadow-lg p-3" style="z-index: 1050" aria-label="Consentement aux cookies">
+            <div class="container d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div class="small text-dark">Nous utilisons des cookies pour le fonctionnement du site. Choisissez si vous consentez à leur utilisation.
+                    @if($privacyPolicyUrl)<a href="{{ $privacyPolicyUrl }}">Politique de confidentialité</a>@endif
+                    @if($termsOfServiceUrl)<a href="{{ $termsOfServiceUrl }}" class="ms-2">Conditions</a>@endif
+                </div>
+                <div class="d-flex gap-2 flex-shrink-0">
+                    <form method="POST" action="{{ route('cookies.consent') }}">@csrf<input type="hidden" name="consented" value="0"><button type="submit" class="btn btn-sm btn-outline-secondary">Refuser</button></form>
+                    <form method="POST" action="{{ route('cookies.consent') }}">@csrf<input type="hidden" name="consented" value="1"><button type="submit" class="btn btn-sm btn-dark">Accepter</button></form>
+                </div>
+            </div>
+        </aside>
+    @endif
 @endsection

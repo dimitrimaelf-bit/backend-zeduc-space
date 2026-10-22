@@ -46,6 +46,18 @@
             font-size: 13px;
         }
 
+        .admin-menu-toggle {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(255, 255, 255, .2);
+            border-radius: 4px;
+            background: transparent;
+            color: #fff;
+        }
+
         .admin-header .user-badge {
             display: flex;
             align-items: center;
@@ -255,6 +267,78 @@
             margin-top: 48px;
             padding: 30px;
             min-height: calc(100vh - 48px);
+            min-width: 0;
+        }
+
+        @media (max-width: 767.98px) {
+            body { overflow-x: hidden; }
+
+            .admin-header {
+                padding: 0 12px;
+                gap: 10px;
+            }
+
+            .admin-menu-toggle { display: inline-flex; flex: 0 0 auto; }
+
+            .admin-header > div:first-of-type {
+                margin-right: auto;
+                white-space: nowrap;
+            }
+
+            .admin-sidebar {
+                width: min(var(--sidebar-width), 86vw);
+                transform: translateX(-105%);
+                transition: transform .2s ease;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                box-shadow: 4px 0 18px rgba(0, 0, 0, .28);
+            }
+
+            .admin-sidebar.is-open { transform: translateX(0); }
+
+            .admin-sidebar-backdrop {
+                display: none;
+                position: fixed;
+                inset: 48px 0 0;
+                z-index: 1020;
+                border: 0;
+                background: rgba(0, 0, 0, .42);
+            }
+
+            .admin-sidebar-backdrop.is-open { display: block; }
+
+            .admin-main-content {
+                width: 100%;
+                margin-left: 0;
+                padding: 18px 14px;
+                overflow-x: clip;
+            }
+
+            .admin-main-content .d-flex.justify-content-between.align-items-start,
+            .admin-main-content .d-flex.justify-content-between.align-items-center {
+                flex-wrap: wrap;
+            }
+
+            .admin-main-content .d-flex.gap-2 {
+                flex-wrap: wrap;
+            }
+
+            .admin-main-content .table-responsive {
+                max-width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .admin-main-content img,
+            .admin-main-content input,
+            .admin-main-content select,
+            .admin-main-content textarea {
+                max-width: 100%;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .admin-sidebar { transition: none; }
         }
     </style>
 
@@ -264,6 +348,9 @@
 
     <!-- Barre supérieure fixe -->
     <header class="admin-header">
+        <button class="admin-menu-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="admin-sidebar">
+            <i class="bi bi-list" aria-hidden="true"></i>
+        </button>
         <div>Barre administrateur</div>
         <div class="user-badge">
             <div class="user-avatar-mini">
@@ -274,7 +361,8 @@
     </header>
 
     <!-- Barre latérale (Sidebar) -->
-    <aside class="admin-sidebar">
+    <button class="admin-sidebar-backdrop" type="button" aria-label="Fermer le menu"></button>
+    <aside class="admin-sidebar" id="admin-sidebar">
         <div>
             <!-- Branding Logo -->
             <div class="sidebar-brand">
@@ -305,6 +393,11 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('admin.categories.index') }}" class="{{ request()->routeIs('admin.categories*') ? 'active' : '' }}">
+                        <i class="bi bi-circle"></i> Catégories
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('admin.promotions.index') }}" class="{{ request()->routeIs('admin.promotions*') ? 'active' : '' }}">
                         <i class="bi bi-circle"></i> Promotions & événements
                     </a>
@@ -312,6 +405,11 @@
                 <li>
                     <a href="{{ route('admin.claims.index') }}" class="{{ request()->routeIs('admin.claims*') ? 'active' : '' }}">
                         <i class="bi bi-circle"></i> Réclamations
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.payments.index') }}" class="{{ request()->routeIs('admin.payments*') ? 'active' : '' }}">
+                        <i class="bi bi-circle"></i> Paiements
                     </a>
                 </li>
                 <li>
@@ -355,6 +453,38 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (() => {
+            const toggle = document.querySelector('.admin-menu-toggle');
+            const sidebar = document.querySelector('.admin-sidebar');
+            const backdrop = document.querySelector('.admin-sidebar-backdrop');
+
+            if (!toggle || !sidebar || !backdrop) return;
+
+            const closeMenu = () => {
+                sidebar.classList.remove('is-open');
+                backdrop.classList.remove('is-open');
+                toggle.setAttribute('aria-expanded', 'false');
+                document.body.classList.remove('admin-menu-open');
+            };
+            const openMenu = () => {
+                sidebar.classList.add('is-open');
+                backdrop.classList.add('is-open');
+                toggle.setAttribute('aria-expanded', 'true');
+                document.body.classList.add('admin-menu-open');
+            };
+
+            toggle.addEventListener('click', () =>
+                sidebar.classList.contains('is-open') ? closeMenu() : openMenu()
+            );
+            backdrop.addEventListener('click', closeMenu);
+            sidebar.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') closeMenu();
+            });
+            window.matchMedia('(min-width: 768px)').addEventListener('change', closeMenu);
+        })();
+    </script>
     @stack('scripts')
 </body>
 </html>

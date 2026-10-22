@@ -1,79 +1,28 @@
 @extends('layouts.mmm')
 
-@section('titre', 'Gestion des réclamations - ZeDuc@Space')
+@section('titre', 'Gestion des réclamations')
 
 @section('contenu')
-<div class="claims-wrapper">
-
-    <!-- En-tête -->
-    <div class="mb-4">
-        <h1 class="font-serif fw-bold text-dark mb-1" style="font-size: 32px; font-family: Georgia, serif;">Gestion des réclamations</h1>
-        <p class="text-muted mb-0" style="font-size: 14px;">Consultez et traitez les réclamations des étudiants.</p>
+<div class="container-fluid px-0">
+    <div class="mb-4"><h1 class="h3 fw-bold mb-1">Gestion des réclamations</h1><p class="text-muted mb-0">Consultez les demandes des étudiants et répondez-y.</p></div>
+    @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+    <form method="GET" action="{{ route('admin.claims.index') }}" class="row g-2 mb-3">
+        <div class="col-sm-7"><label class="visually-hidden" for="claim-search">Rechercher</label><input id="claim-search" name="search" value="{{ request('search') }}" class="form-control" placeholder="Sujet, étudiant ou numéro de commande"></div>
+        <div class="col-sm-3"><label class="visually-hidden" for="claim-status">Statut</label><select id="claim-status" name="status" class="form-select"><option value="">Tous les statuts</option>@foreach(['open' => 'Ouverte', 'in_progress' => 'En cours', 'resolved' => 'Résolue', 'rejected' => 'Rejetée'] as $value => $label)<option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>@endforeach</select></div>
+        <div class="col-sm-2 d-grid"><button class="btn btn-outline-secondary">Filtrer</button></div>
+    </form>
+    <div class="table-responsive bg-white border rounded-2">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th class="ps-3">Commande</th><th>Étudiant</th><th>Sujet</th><th>Date</th><th>Statut</th><th class="text-end pe-3">Action</th></tr></thead>
+            <tbody>
+                @forelse($claims as $claim)
+                    <tr><td class="ps-3">{{ $claim->order?->order_number ?? '—' }}</td><td>{{ $claim->user?->first_name }} {{ $claim->user?->last_name }}</td><td>{{ $claim->subject }}</td><td>{{ $claim->created_at?->format('d/m/Y H:i') }}</td><td><span class="badge text-bg-{{ $claim->status === 'resolved' ? 'success' : ($claim->status === 'rejected' ? 'secondary' : 'warning') }}">{{ ['open' => 'Ouverte', 'in_progress' => 'En cours', 'resolved' => 'Résolue', 'rejected' => 'Rejetée'][$claim->status] ?? $claim->status }}</span></td><td class="text-end pe-3"><a class="btn btn-sm btn-outline-dark" href="{{ route('admin.claims.edit', $claim) }}">Traiter</a></td></tr>
+                @empty
+                    <tr><td colspan="6" class="text-center text-muted py-4">Aucune réclamation trouvée.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
-
-    <!-- Filtres -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-3 p-2 bg-white">
-                <div class="input-group border-0">
-                    <span class="input-group-text bg-transparent border-0 text-muted"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-control border-0 bg-transparent shadow-none" placeholder="Rechercher..." style="font-size: 13.5px;">
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-3 p-2 bg-white">
-                <div class="input-group border-0">
-                    <span class="input-group-text bg-transparent border-0 text-muted"><i class="bi bi-funnel"></i></span>
-                    <input type="text" class="form-control border-0 bg-transparent shadow-none" placeholder="Filter on order ID ou nom étudiant" style="font-size: 13.5px;">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tableau -->
-    <div class="card border-0 shadow-sm rounded-3 overflow-hidden bg-white mb-4">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
-                <thead class="bg-light text-muted">
-                    <tr style="font-size: 12px;">
-                        <th class="py-3 px-4">ID de commande</th>
-                        <th class="py-3 px-3">Nom de l'étudiant</th>
-                        <th class="py-3 px-3">Date</th>
-                        <th class="py-3 px-3">Type de réclamation</th>
-                        <th class="py-3 px-3">Statut</th>
-                        <th class="py-3 px-4 text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="border-bottom">
-                        <td class="py-3 px-4 fw-bold">#883490</td>
-                        <td class="py-3 px-3">Alice Nguema</td>
-                        <td class="py-3 px-3 text-muted">16/09 14:30</td>
-                        <td class="py-3 px-3">Plat froid</td>
-                        <td class="py-3 px-3"><span class="badge bg-warning-subtle text-warning-emphasis px-3 py-1 rounded-pill">En attente</span></td>
-                        <td class="py-3 px-4 text-end"><button class="btn btn-sm text-white px-3" style="background-color: #b89d68;">Répondre</button></td>
-                    </tr>
-                    <tr class="border-bottom">
-                        <td class="py-3 px-4 fw-bold">#883472</td>
-                        <td class="py-3 px-3">Sophie M.</td>
-                        <td class="py-3 px-3 text-muted">15/09 19:20</td>
-                        <td class="py-3 px-3">Cheveu dans le plat</td>
-                        <td class="py-3 px-3"><span class="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill">Urgent</span></td>
-                        <td class="py-3 px-4 text-end"><button class="btn btn-sm text-white px-3" style="background-color: #b89d68;">Répondre</button></td>
-                    </tr>
-                    <tr class="border-bottom">
-                        <td class="py-3 px-4 fw-bold">#883440</td>
-                        <td class="py-3 px-3">Kevin T.</td>
-                        <td class="py-3 px-3 text-muted">14/09 21:00</td>
-                        <td class="py-3 px-3">Portion incorrecte</td>
-                        <td class="py-3 px-3"><span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">Résolu</span></td>
-                        <td class="py-3 px-4 text-end"><button class="btn btn-sm btn-secondary px-3">Voir</button></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
+    <div class="mt-3">{{ $claims->links() }}</div>
 </div>
 @endsection

@@ -47,6 +47,41 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseMissing('users', ['email' => 'amina@example.com', 'password' => 'Password123!']);
     }
 
+    public function test_public_registration_cannot_assign_an_admin_role(): void
+    {
+        $response = $this->post('/register', [
+            'role_id' => Role::where('code', 'admin')->value('id'),
+            'first_name' => 'Public',
+            'last_name' => 'Admin Attempt',
+            'email' => 'public-admin@example.test',
+            'phone' => '690001122',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ]);
+
+        $response->assertRedirect(route('home'));
+        $this->assertDatabaseHas('users', [
+            'email' => 'public-admin@example.test',
+            'role_id' => Role::where('code', 'student')->value('id'),
+        ]);
+    }
+
+    public function test_cookie_consent_records_the_admin_configured_policy_version(): void
+    {
+        \App\Models\AppSetting::updateOrCreate(
+            ['setting_key' => 'cookie_policy_version'],
+            ['setting_value' => '2.3']
+        );
+
+        $this->post(route('cookies.consent'), ['consented' => true])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('cookie_consents', [
+            'consented' => 1,
+            'policy_version' => '2.3',
+        ]);
+    }
+
     public function test_registration_saves_referral_relationship_and_allows_optional_phone(): void
     {
         $referrer = User::create([

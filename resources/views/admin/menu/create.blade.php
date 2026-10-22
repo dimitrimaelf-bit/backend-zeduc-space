@@ -1,82 +1,23 @@
-@extends('layouts.admin')
+@extends('layouts.mmm')
 
-@section('title', 'Ajouter un Plat - Mon Miam Miam')
+@section('titre', 'Ajouter un article au menu')
 
-@section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold text-dark mb-0">Nouveau Plat au Menu</h3>
-    <a href="{{ route('admin.menu.index') }}" class="btn btn-outline-secondary">
-        <i class="fa-solid fa-arrow-left me-1"></i> Retour à la liste
-    </a>
-</div>
-
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-4">
-        <form action="{{ route('admin.menu.store') }}" method="POST" enctype="multipart/form-data">
+@section('contenu')
+<div class="container-fluid px-0">
+    <div class="mb-4"><h1 class="h3 fw-bold">Ajouter un article au menu</h1><p class="text-muted">Renseignez les informations du plat ou de la boisson.</p></div>
+    <div class="bg-white border rounded-2 p-4">
+        <form method="POST" action="{{ route('admin.menu.store') }}">
             @csrf
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="name" class="form-label fw-semibold">Nom du plat <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name') }}" required>
-                    @error('name')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label for="category_id" class="form-label fw-semibold">Catégorie <span class="text-danger">*</span></label>
-                    <select class="form-select @error('category_id') is-invalid @enderror" id="category_id" name="category_id" required>
-                        <option value="">-- Sélectionner une catégorie --</option>
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
-                                {{ $category->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('category_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+            <div class="row g-3">
+                <div class="col-md-6"><label for="name" class="form-label">Nom</label><input id="name" name="name" value="{{ old('name') }}" class="form-control @error('name') is-invalid @enderror" required>@error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                <div class="col-md-6"><label for="category_id" class="form-label">Catégorie</label><select id="category_id" name="category_id" class="form-select @error('category_id') is-invalid @enderror"><option value="">Sans catégorie</option>@foreach($categories as $category)<option value="{{ $category->id }}" @selected((string) old('category_id') === (string) $category->id)>{{ $category->name }}</option>@endforeach</select>@error('category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                <div class="col-md-6"><label for="price_fcfa" class="form-label">Prix (FCFA)</label><input id="price_fcfa" type="number" min="0" step="1" name="price_fcfa" value="{{ old('price_fcfa') }}" class="form-control @error('price_fcfa') is-invalid @enderror" required>@error('price_fcfa')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                <div class="col-md-6"><label for="image_url" class="form-label">URL de l’image</label><input id="image_url" type="url" name="image_url" value="{{ old('image_url') }}" class="form-control @error('image_url') is-invalid @enderror">@error('image_url')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                <div class="col-12"><label for="description" class="form-label">Description</label><textarea id="description" name="description" rows="3" class="form-control @error('description') is-invalid @enderror">{{ old('description') }}</textarea>@error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                <div class="col-md-6 form-check form-switch ms-2"><input id="is_available" type="checkbox" name="is_available" value="1" class="form-check-input" @checked(old('is_available', true))><label for="is_available" class="form-check-label">Disponible à la commande</label></div>
+                <div class="col-md-6 form-check form-switch ms-2"><input id="is_daily_special" type="checkbox" name="is_daily_special" value="1" class="form-check-input" @checked(old('is_daily_special'))><label for="is_daily_special" class="form-check-label">Plat du jour</label></div>
             </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="price" class="form-label fw-semibold">Prix (FCFA) <span class="text-danger">*</span></label>
-                    <input type="number" step="0.01" class="form-control @error('price') is-invalid @enderror" id="price" name="price" value="{{ old('price') }}" required>
-                    @error('price')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label for="image" class="form-label fw-semibold">Photo du plat</label>
-                    <input type="file" class="form-control @error('image') is-invalid @enderror" id="image" name="image" accept="image/*">
-                    @error('image')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label for="description" class="form-label fw-semibold">Description</label>
-                <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" rows="3">{{ old('description') }}</textarea>
-                @error('description')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            <div class="mb-4 form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="is_available" name="is_available" value="1" {{ old('is_available', 1) ? 'checked' : '' }}>
-                <label class="form-check-label fw-semibold" for="is_available">Disponible immédiatement à la commande</label>
-            </div>
-
-            <div class="d-flex justify-content-end gap-2">
-                <a href="{{ route('admin.menu.index') }}" class="btn btn-light">Annuler</a>
-                <button type="submit" class="btn btn-brand">
-                    <i class="fa-solid fa-floppy-disk me-1"></i> Enregistrer
-                </button>
-            </div>
+            <div class="d-flex justify-content-end gap-2 mt-4"><a href="{{ route('admin.menu.index') }}" class="btn btn-outline-secondary">Annuler</a><button class="btn btn-dark" type="submit">Créer l’article</button></div>
         </form>
     </div>
 </div>

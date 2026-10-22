@@ -1,61 +1,65 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
+
 use App\Http\Controllers\Controller;
 use App\Models\MenuCategory;
 use Illuminate\Http\Request;
 
-
-class MenuCategoryController extends Controller //Classe gerant la logique des categories de menus (Plats, Boissons, etc.)
+class MenuCategoryController extends Controller
 {
-   
-    public function index() //Affiche la liste des categories de menu
+    public function index()
     {
-        $categories = MenuCategory::orderBy('sort_order', 'asc')->get(); // Recuperation de toutes les categories triees par ordre d'affichage croissant
-        return view('admin.categories.index', compact('categories')); // Rendu de la vue Blade et transmission de la variable $categories
+        $categories = MenuCategory::orderBy('sort_order')->get();
+
+        return view('admin.categories.index', compact('categories'));
     }
 
-    public function create() //Affiche le formulaire de creation de categorie
+    public function create()
     {
-        return view('admin.categories.create');// Rendu du formulaire Blade d'ajout
+        return view('admin.categories.create');
     }
-    
-    public function store(Request $request) // Methode de traitement du formulaire de creation et enregistrement d'une nouvelle categorie
+
+    public function store(Request $request)
     {
-        
-        $validated = $request->validate([  // Validation des regles pour une categorie
-            'name'       => 'required|string|unique:menu_categories,name|max:100', // Nom unique obligatoire
-            'sort_order' => 'required|integer|min:0', // Ordre de tri sous forme d'entier
-            'is_active'  => 'required|boolean', // Booleen indiquant si la categorie est active
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100', 'unique:menu_categories,name'],
+            'sort_order' => ['required', 'integer', 'min:0'],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
-       
-        MenuCategory::create($validated);  // Enregistrement effectif de la nouvelle categorie dans la base MySQL
-        return redirect()->route('admin.categories.index')  // Redirection vers la liste des categories avec un message de succes
-            ->with('success', 'Categorie creee avec succes.');
-    }
-        public function edit($id)// Methode affichant l'ecran d'edition et le formulaire de modification de categorie
-    {
-        $category = MenuCategory::findOrFail($id); // Recherche de la categorie par son identifiant ou levee d'une erreur 404
-        return view('admin.categories.edit', compact('category')); // Chargement de la vue Blade avec l'objet categorie
+        $validated['is_active'] = $request->boolean('is_active');
+
+        MenuCategory::create($validated);
+
+        return redirect()->route('admin.categories.index')->with('success', 'Catégorie créée.');
     }
 
-    public function update(Request $request, $id)  //Methode enregistrant les modifications/mise a jour apportees a une categorie
+    public function edit(int|string $category)
     {
-        $category = MenuCategory::findOrFail($id); // Recuperation de l'enregistrement existant
-        $validated = $request->validate([ // Validation des donnees modifiees
-            'name'       => 'required|string|max:100|unique:menu_categories,name,' . $id,  // Verification du nom en ignorant l'enregistrement en cours
-            'sort_order' => 'required|integer|min:0', // Ordre de tri valide
-            'is_active'  => 'required|boolean',  // Statut actif/inactif
+        $category = MenuCategory::findOrFail($category);
+
+        return view('admin.categories.edit', compact('category'));
+    }
+
+    public function update(Request $request, int|string $category)
+    {
+        $category = MenuCategory::findOrFail($category);
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100', 'unique:menu_categories,name,'.$category->id],
+            'sort_order' => ['required', 'integer', 'min:0'],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
-        $category->update($validated); // Application des modifications en base de donnees
-        return redirect()->route('admin.categories.index') // Redirection vers l'index avec notification
-            ->with('success', 'Categorie mise a jour avec succes.');
+        $validated['is_active'] = $request->boolean('is_active');
+        $category->update($validated);
+
+        return redirect()->route('admin.categories.index')->with('success', 'Catégorie mise à jour.');
     }
 
-    public function destroy($id)// Methode de suppression definitive d'une categorie
+    public function destroy(int|string $category)
     {
-        $category = MenuCategory::findOrFail($id); // Recherche de la categorie ciblee
-        $category->delete(); // Execution de la suppression dans la base de donnees
-        return redirect()->route('admin.categories.index')// Redirection avec message de confirmation
-            ->with('success', 'Categorie supprimee avec succes.');
+        $category = MenuCategory::findOrFail($category);
+        $category->delete();
+
+        return redirect()->route('admin.categories.index')->with('success', 'Catégorie supprimée.');
     }
 }

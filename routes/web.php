@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Etudiant\Cookies as CookieConsentController;
 use App\Http\Controllers\Etudiant\MenuController;
 use App\Http\Controllers\Etudiant\CartController;
 use App\Http\Controllers\Etudiant\OrderController;
@@ -18,6 +19,24 @@ use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\ClaimController;
 use App\Http\Controllers\Admin\AppSettingController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\LoyaltyController as AdminLoyaltyController;
+use App\Http\Controllers\Admin\EventController;
+use App\Http\Controllers\Admin\PaymentController;
+
+Route::get('/', function () {
+    $settings = \App\Models\AppSetting::whereIn('setting_key', [
+        'privacy_policy_url',
+        'terms_of_service_url',
+        'cookie_policy_version',
+    ])->pluck('setting_value', 'setting_key');
+
+    return view('home', [
+        'privacyPolicyUrl' => $settings['privacy_policy_url'] ?? null,
+        'termsOfServiceUrl' => $settings['terms_of_service_url'] ?? null,
+        'cookiePolicyVersion' => $settings['cookie_policy_version'] ?? '1.0',
+    ]);
+})->name('home');
+Route::post('/cookies/consent', [CookieConsentController::class, 'store'])->name('cookies.consent');
 
 // 1. ROUTES ACCESSIBLES UNIQUEMENT QUAND ON N'EST PAS CONNECTÉ
 Route::middleware('guest')->group(function () {
@@ -37,7 +56,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    Route::get('/dashboard', [DashboardController::class, 'stats'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ESPACE ÉTUDIANT
     Route::prefix('etudiant')->name('etudiant.')->group(function () {
@@ -68,13 +87,18 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             
             // Route du Tableau de Bord Administration (/admin/dashboard)
-            Route::get('/dashboard', [DashboardController::class, 'stats'])->name('dashboard');
+            Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+            Route::get('/stats', [DashboardController::class, 'stats'])->name('stats');
+            Route::post('/loyalty/adjust', [AdminLoyaltyController::class, 'adjust'])->name('loyalty.adjust');
+            Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+            Route::post('/payments/{payment}/confirm-cash', [PaymentController::class, 'confirmCash'])->name('payments.confirm-cash');
             
             // Routes CRUD des modules d'administration
             Route::resource('employees', EmployeeController::class);
             Route::resource('categories', MenuCategoryController::class);
             Route::resource('menu', MenuItemController::class);
             Route::resource('promotions', PromotionController::class);
+            Route::resource('events', EventController::class)->except(['show']);
             Route::resource('claims', ClaimController::class)->only(['index', 'edit', 'update']);
             Route::resource('settings', AppSettingController::class)->only(['index', 'update']);
             

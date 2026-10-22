@@ -1,44 +1,11 @@
-@extends('layouts.admin')
+@extends('layouts.mmm')
 
-@section('title', 'Modifier la Catégorie - Mon Miam Miam')
+@section('titre', 'Modifier une catégorie')
 
-@section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold text-dark mb-0">Modifier la catégorie : {{ $category->name }}</h3>
-    <a href="{{ route('admin.categories.index') }}" class="btn btn-outline-secondary">
-        <i class="fa-solid fa-arrow-left me-1"></i> Retour à la liste
-    </a>
-</div>
-
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-4">
-        <form action="{{ route('admin.categories.update', $category) }}" method="POST">
-            @csrf
-            @method('PUT')
-
-            <div class="mb-3">
-                <label for="name" class="form-label fw-semibold">Nom de la catégorie <span class="text-danger">*</span></label>
-                <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name', $category->name) }}" required>
-                @error('name')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            <div class="mb-4">
-                <label for="description" class="form-label fw-semibold">Description</label>
-                <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" rows="4">{{ old('description', $category->description) }}</textarea>
-                @error('description')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            <div class="d-flex justify-content-end gap-2">
-                <a href="{{ route('admin.categories.index') }}" class="btn btn-light">Annuler</a>
-                <button type="submit" class="btn btn-brand">
-                    <i class="fa-solid fa-arrows-rotate me-1"></i> Mettre à jour
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
+@section('contenu')
+<div class="container-fluid px-0"><div class="mb-4"><h1 class="h3 fw-bold">Modifier une catégorie</h1></div><div class="bg-white border rounded-2 p-4"><form method="POST" action="{{ route('admin.categories.update', $category) }}">@csrf @method('PUT')
+<div class="row g-3"><div class="col-md-6"><label for="name" class="form-label">Nom</label><input id="name" name="name" value="{{ old('name', $category->name) }}" class="form-control @error('name') is-invalid @enderror" required>@error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+<div class="col-md-3"><label for="sort_order" class="form-label">Ordre d’affichage</label><input id="sort_order" type="number" min="0" name="sort_order" value="{{ old('sort_order', $category->sort_order) }}" class="form-control @error('sort_order') is-invalid @enderror" required>@error('sort_order')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+<div class="col-md-3 d-flex align-items-end"><div class="form-check form-switch mb-2"><input id="is_active" type="checkbox" name="is_active" value="1" class="form-check-input" @checked(old('is_active', $category->is_active))><label for="is_active" class="form-check-label">Catégorie active</label></div></div></div>
+<div class="d-flex justify-content-end gap-2 mt-4"><a href="{{ route('admin.categories.index') }}" class="btn btn-outline-secondary">Annuler</a><button class="btn btn-dark">Enregistrer</button></div></form></div></div>
 @endsection
