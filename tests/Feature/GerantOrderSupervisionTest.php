@@ -36,6 +36,9 @@ class GerantOrderSupervisionTest extends TestCase
             ->get(route('gerant.orders.index', ['status' => 'pending']))
             ->assertOk()
             ->assertViewIs('Gerant.Supervision')
+            ->assertSee('Supervision des Commandes')
+            ->assertSee('Modifier le statut')
+            ->assertSee('id="mobileSidebar"', false)
             ->assertViewHas('orders', fn ($orders) => $orders->total() === 1)
             ->assertViewHas('summary', fn ($summary) => $summary['pending'] === 1 && $summary['preparing'] === 1);
     }

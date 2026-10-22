@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyTransaction;
+use App\Models\MenuItem;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Referral;
 use App\Models\ReferralCode;
@@ -38,7 +40,23 @@ class GerantStatisticsTest extends TestCase
             'user_id' => $customer->id,
             'service_mode' => 'on_site',
             'status' => 'completed',
+            'discount_fcfa' => 500,
+            'loyalty_points_used' => 10,
             'total_fcfa' => 2500,
+        ]);
+        $menuItem = MenuItem::create([
+            'name' => 'Plat de test',
+            'description' => 'Plat ajouté pour les statistiques',
+            'price_fcfa' => 1250,
+            'is_available' => true,
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'menu_item_id' => $menuItem->id,
+            'item_name' => $menuItem->name,
+            'unit_price_fcfa' => $menuItem->price_fcfa,
+            'quantity' => 2,
+            'line_total_fcfa' => 2500,
         ]);
 
         // Associe un paiement encaissé à la commande pour alimenter les chiffres de vente.
@@ -62,6 +80,13 @@ class GerantStatisticsTest extends TestCase
             'points' => 12,
             'description' => 'Points gagnés sur une commande',
         ]);
+        LoyaltyTransaction::create([
+            'user_id' => $customer->id,
+            'order_id' => $order->id,
+            'type' => 'redeem',
+            'points' => -10,
+            'description' => 'Points utilisés',
+        ]);
 
         // Prépare un code de parrainage actif et un parrainage récompensé.
         $referralCode = ReferralCode::create([
@@ -69,12 +94,21 @@ class GerantStatisticsTest extends TestCase
             'code' => 'REF-STAT-1',
             'is_active' => true,
         ]);
+        $referredUser = $this->userWithRole('student2');
         Referral::create([
             'referrer_user_id' => $customer->id,
-            'referred_user_id' => $this->userWithRole('student2')->id,
+            'referred_user_id' => $referredUser->id,
             'code_id' => $referralCode->id,
             'status' => 'rewarded',
         ]);
+        foreach ([1, 2] as $number) {
+            Order::create([
+                'order_number' => 'ORDER-REF-'.$number,
+                'user_id' => $referredUser->id,
+                'service_mode' => 'delivery',
+                'status' => 'completed',
+            ]);
+        }
 
         // Contrôle les indicateurs calculés pour chaque domaine statistique.
         $this->actingAs($manager)
@@ -82,9 +116,17 @@ class GerantStatisticsTest extends TestCase
             ->assertOk()
             ->assertViewIs('Gerant.Stats')
             ->assertViewHas('sales', fn ($sales) => $sales['paid_total_fcfa'] === 2500 && $sales['paid_transactions'] === 1)
-            ->assertViewHas('orders', fn ($orders) => $orders['total'] === 1 && $orders['by_status']['completed'] === 1)
+            ->assertViewHas('orders', fn ($orders) => $orders['total'] === 3 && $orders['by_status']['completed'] === 3)
             ->assertViewHas('loyalty', fn ($loyalty) => $loyalty['accounts'] === 1 && $loyalty['balance_points_total'] === 12 && $loyalty['by_type']['earn']['points_total'] === 12)
-            ->assertViewHas('referrals', fn ($referrals) => $referrals['active_codes'] === 1 && $referrals['by_status']['rewarded'] === 1);
+            ->assertViewHas('referrals', fn ($referrals) => $referrals['active_codes'] === 1 && $referrals['by_status']['rewarded'] === 1)
+            ->assertViewHas('rewards', fn ($rewards) => $rewards['loyalty_redemptions'] === 1
+                && $rewards['discounted_orders'] === 1
+                && $rewards['referral_repeat_purchase_rate'] === 100)
+            ->assertViewHas('channels', fn ($channels) => $channels['on_site']['percentage'] === 33
+                && $channels['delivery']['percentage'] === 67)
+            ->assertViewHas('topPlats', fn ($topPlats) => $topPlats->count() === 1
+                && $topPlats->first()->name === 'Plat de test'
+                && (int) $topPlats->first()->commandes_count === 2);
     }
 
     // Vérifie que les statistiques ne sont accessibles qu'aux gérants.

@@ -22,10 +22,11 @@ class ClaimReviewController extends Controller
         // L'historique global des réclamations est réservé aux gérants.
         abort_unless((int) $request->user()?->role_id === 3, 403);
 
-        // Le filtre est facultatif, mais sa valeur doit correspondre à un état autorisé.
+        // Le filtre regroupe les réclamations à traiter et celles déjà traitées.
         $filters = $request->validate([
-            'status' => ['sometimes', 'string', Rule::in(self::STATUSES)],
+            'filter' => ['sometimes', 'string', Rule::in(['to_process', 'processed'])],
         ]);
+        $activeFilter = $filters['filter'] ?? 'to_process';
 
         // Charge aussi le demandeur, la commande et l'employé chargé du dossier.
         // Cette prélecture évite de refaire une requête pour chaque réclamation affichée.
@@ -35,15 +36,18 @@ class ClaimReviewController extends Controller
                 'order:id,order_number,status',
                 'handler:id,first_name,last_name',
             ])
-            // Applique le filtre seulement si le gérant a choisi un état.
-            ->when(
-                isset($filters['status']),
-                fn ($query) => $query->where('status', $filters['status'])
+            // Les deux onglets regroupent les états correspondant à leur étape de traitement.
+            ->whereIn(
+                'status',
+                $activeFilter === 'processed'
+                    ? ['resolved', 'rejected']
+                    : ['open', 'in_progress']
             )
             // Les dossiers les plus récemment créés apparaissent en premier.
             ->orderByDesc('created_at')
             // Limite la liste à 15 résultats par page.
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
         // Les compteurs représentent tous les dossiers : ils ne dépendent pas du filtre de la liste.
         $counts = Claim::query()
@@ -58,11 +62,12 @@ class ClaimReviewController extends Controller
         foreach ($counts as $status => $count) {
             $summary[$status] = (int) $count;
         }
-     return view('Gerant.Claims', [
-         'claims' => $claims,
-         'summary' => $summary,
-         'selectedClaim' => $claims->first(),
-     ]);
+        return view('Gerant.Claims', [
+            'claims' => $claims,
+            'summary' => $summary,
+            'selectedClaim' => $claims->first(),
+            'activeFilter' => $activeFilter,
+        ]);
         
     }
 

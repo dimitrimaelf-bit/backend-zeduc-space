@@ -1,7 +1,8 @@
 <!-- Hérite du layout maître situé dans resources/views/layouts/gerant.blade.php -->
 @extends('layouts.gerant')
 @section('title', 'Commandes en préparation')
-
+@section('sidebar-image', 'Poisson-Supervision.jpg')
+@section('sidebar-opacity', '0.5')
 @section('content')
 {{-- En-tête flexible responsive --}}
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">

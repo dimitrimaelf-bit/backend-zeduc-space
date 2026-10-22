@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyTransaction;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Referral;
 use App\Models\ReferralCode;
@@ -24,6 +25,7 @@ class StatisticsController extends Controller
     // Types d'opérations de fidélité présentés dans les statistiques.
     private const LOYALTY_TRANSACTION_TYPES = [
         'earn',
+        'redeem',
         'referral',
         'expire',
     ];
@@ -59,6 +61,25 @@ class StatisticsController extends Controller
             ->selectRaw('status, COUNT(*) as aggregate')
             ->groupBy('status')
             ->pluck('aggregate', 'status');
+
+        // Classe les plats par quantité vendue en conservant les articles supprimés du menu.
+        $topPlats = OrderItem::query()
+            ->leftJoin('menu_items', 'order_items.menu_item_id', '=', 'menu_items.id')
+            ->selectRaw('COALESCE(menu_items.name, order_items.item_name) as name')
+            ->selectRaw('COALESCE(menu_items.price_fcfa, order_items.unit_price_fcfa) as price_fcfa')
+            ->selectRaw('menu_items.image_url as image_url')
+            ->selectRaw('SUM(order_items.quantity) as commandes_count')
+            ->groupBy(
+                'order_items.menu_item_id',
+                'order_items.item_name',
+                'order_items.unit_price_fcfa',
+                'menu_items.name',
+                'menu_items.price_fcfa',
+                'menu_items.image_url'
+            )
+            ->orderByDesc('commandes_count')
+            ->limit(3)
+            ->get();
 
         // Initialise tous les états connus à zéro, puis y reporte les résultats présents.
         $ordersByStatus = array_fill_keys(self::ORDER_STATUSES, 0);
@@ -104,6 +125,54 @@ class StatisticsController extends Controller
             'by_status' => $referralsByStatus,
         ];
 
-        return view('Gerant.Stats', compact('sales', 'orders', 'loyalty', 'referrals'));
+        $discountedOrders = (int) Order::query()->where('discount_fcfa', '>', 0)->count();
+        $referredUserIds = Referral::query()
+            ->where('status', '!=', 'cancelled')
+            ->distinct()
+            ->pluck('referred_user_id');
+        $repeatPurchasingReferrals = $referredUserIds->isEmpty()
+            ? 0
+            : (int) Order::query()
+                ->whereIn('user_id', $referredUserIds)
+                ->whereIn('status', ['delivered', 'completed'])
+                ->select('user_id')
+                ->groupBy('user_id')
+                ->havingRaw('COUNT(*) >= 2')
+                ->get()
+                ->count();
+
+        $rewards = [
+            'loyalty_redemptions' => $loyaltyByType['redeem']['transactions'],
+            'discounted_orders' => $discountedOrders,
+            'referral_repeat_purchase_rate' => $referredUserIds->isNotEmpty()
+                ? (int) round(($repeatPurchasingReferrals / $referredUserIds->count()) * 100)
+                : 0,
+        ];
+
+        $ordersByChannel = Order::query()
+            ->selectRaw('service_mode, COUNT(*) as aggregate')
+            ->groupBy('service_mode')
+            ->pluck('aggregate', 'service_mode');
+        $channelTotal = (int) $ordersByChannel->sum();
+        $channels = [];
+        foreach (['on_site', 'delivery'] as $serviceMode) {
+            $count = (int) ($ordersByChannel[$serviceMode] ?? 0);
+            $channels[$serviceMode] = [
+                'count' => $count,
+                'percentage' => $channelTotal > 0
+                    ? (int) round(($count / $channelTotal) * 100)
+                    : 0,
+            ];
+        }
+
+        return view('Gerant.Stats', compact(
+            'sales',
+            'orders',
+            'loyalty',
+            'referrals',
+            'topPlats',
+            'rewards',
+            'channels'
+        ));
     }
 }

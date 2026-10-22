@@ -1,6 +1,7 @@
 @extends('layouts.Gerant')
 @section('title', 'Statistiques & Performance')
-
+@section('sidebar-image', 'jus-orange.jpg')
+@section('sidebar-opacity', '0.65')
 @section('content')
 {{-- En-tête responsive avec filtre de période --}}
 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
@@ -59,24 +60,24 @@
             <h6 class="fw-bold text-dark mb-3">Utilisation des Récompenses</h6>
             <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                 <div>
-                    <span class="fw-bold d-block text-dark small">Plats gratuits (Points Fidélité)</span>
-                    <span class="text-muted small">Échangés au passe</span>
+                    <span class="fw-bold d-block text-dark small">Échanges de points fidélité</span>
+                    <span class="text-muted small">Transactions de points utilisées</span>
                 </div>
-                <span class="fw-bold text-dark">0 plat</span>
+                <span class="fw-bold text-dark">{{ $rewards['loyalty_redemptions'] }} échange(s)</span>
             </div>
             <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                 <div>
-                    <span class="fw-bold d-block text-dark small">Bons de réduction Parrainage</span>
-                    <span class="text-muted small">Code 500 F & 1000 F</span>
+                    <span class="fw-bold d-block text-dark small">Commandes avec réduction</span>
+                    <span class="text-muted small">Toutes les réductions enregistrées</span>
                 </div>
-                <span class="fw-bold text-dark">0 utilisé</span>
+                <span class="fw-bold text-dark">{{ $rewards['discounted_orders'] }} commande(s)</span>
             </div>
             <div class="d-flex justify-content-between align-items-center py-2">
                 <div>
                     <span class="fw-bold d-block text-dark small">Taux de réachat des Filleuls</span>
                     <span class="text-muted small">Commandes renouvelées</span>
                 </div>
-                <span class="fw-bold text-success">0 %</span>
+                <span class="fw-bold text-success">{{ $rewards['referral_repeat_purchase_rate'] }} %</span>
             </div>
         </div>
     </div>
@@ -87,15 +88,11 @@
             <h6 class="fw-bold text-dark mb-3">Répartition par Canal de Commande</h6>
             <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                 <span class="small text-muted fw-bold">Sur place (Table)</span>
-                <span class="fw-bold text-dark">0 %</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                <span class="small text-muted fw-bold">À emporter</span>
-                <span class="fw-bold text-dark">0 %</span>
+                <span class="fw-bold text-dark">{{ $channels['on_site']['percentage'] }} %</span>
             </div>
             <div class="d-flex justify-content-between align-items-center py-2">
                 <span class="small text-muted fw-bold">Livraison à domicile</span>
-                <span class="fw-bold text-dark">0 %</span>
+                <span class="fw-bold text-dark">{{ $channels['delivery']['percentage'] }} %</span>
             </div>
         </div>
     </div>
@@ -104,27 +101,37 @@
 {{-- Section 4 : Top Plats & Rentabilité --}}
 <h5 class="fw-bold text-dark mb-3">Top Plats & Rentabilité</h5>
 <div class="row g-3">
-    @php
-        $topPlats = [
-            ['nom' => 'Poulet pané', 'prix' => '2 500 F', 'vol' => '230 commandes'],
-            ['nom' => 'Poisson braisé', 'prix' => '2 500 F', 'vol' => '133 commandes'],
-            ['nom' => 'Poulet DG', 'prix' => '2 000 F', 'vol' => '124 commandes']
-        ];
-    @endphp
-
-    @foreach($topPlats as $plat)
+    @forelse($topPlats as $plat)
         <div class="col-12 col-sm-6 col-md-4">
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
-                <div class="bg-secondary" style="height: 120px;"></div>
+                <div class="position-relative" style="height: 120px;">
+                    <img src="{{ $plat->image_url ?: asset('images/default-dish.jpg') }}" alt="{{ $plat->name }}" class="w-100 h-100 object-fit-cover"
+                    onerror="this.src='{{ asset('images/default-dish.jpg') }}';">
+                </div>
                 <div class="p-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="fw-bold mb-0 text-dark">{{ $plat['nom'] }}</h6>
-                        <span class="fw-bold text-dark">{{ $plat['prix'] }}</span>
+                        <h6 class="fw-bold mb-0 text-dark">{{ $plat->name }}</h6>
+                        <span class="fw-bold text-dark">{{ number_format($plat->price_fcfa, 0, ',', ' ') }}F</span>
                     </div>
-                    <span class="text-muted small d-block mt-1">{{ $plat['vol'] }}</span>
+                    <span class="text-muted small d-block mt-1">{{ $plat->commandes_count }} {{ Str::plural('commande', $plat->commandes_count) }}
+                    </span>
                 </div>
             </div>
         </div>
-    @endforeach
+        @empty
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white">
+                <div class="py-3">
+                    <div class="rounded-circle bg-light d-inline-flex p-3 mb-3">
+                        <i class="fa-solid fa-chart-line fs-2 text-muted"></i>
+                    </div>
+                    <h6 class="fw-bold text-dark mb-1">Aucune statistique disponible pour le moment</h6>
+                    <p class="text-muted small mb-0 ms-auto me-auto" style="max-width: 450px;">
+                        Aucune commande n'a encore été enregistrée. Le classement des plats les plus populaires et rentables s'affichera ici automatiquement dès les premières ventes.
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endforelse
 </div>
 @endsection

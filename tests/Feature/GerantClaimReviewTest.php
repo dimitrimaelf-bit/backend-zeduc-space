@@ -40,6 +40,30 @@ class GerantClaimReviewTest extends TestCase
             ->assertSee('Réponse proposée par employé');
     }
 
+    public function test_manager_can_filter_claims_by_processing_stage(): void
+    {
+        $manager = $this->userWithRole('manager');
+        $openClaim = $this->createClaim('open', null);
+        $inProgressClaim = $this->createClaim('in_progress', 'Réponse en attente');
+        $resolvedClaim = $this->createClaim('resolved', 'Réponse approuvée');
+        $rejectedClaim = $this->createClaim('rejected', 'Réponse refusée');
+
+        $this->actingAs($manager)
+            ->get(route('gerant.claims.index', ['filter' => 'to_process']))
+            ->assertOk()
+            ->assertViewHas('claims', fn ($claims) => $claims->pluck('id')->sort()->values()->all()
+                === collect([$openClaim->id, $inProgressClaim->id])->sort()->values()->all())
+            ->assertSee('À traiter')
+            ->assertDontSee('Rejeter / Ajuster');
+
+        $this->get(route('gerant.claims.index', ['filter' => 'processed']))
+            ->assertOk()
+            ->assertViewHas('claims', fn ($claims) => $claims->pluck('id')->sort()->values()->all()
+                === collect([$resolvedClaim->id, $rejectedClaim->id])->sort()->values()->all())
+            ->assertSee('Traitées')
+            ->assertDontSee('Valider la solution');
+    }
+
     // Vérifie que l'approbation d'une réponse clôt la réclamation comme résolue.
     public function test_manager_can_approve_an_employee_response(): void
     {

@@ -16,18 +16,23 @@
             background-color: #f5f0eb;
         }
         
-        /* Configuration de la Sidebar responsive */
+        /* Configuration de la barre laterale responsive */
         .sidebar {
-            background-color: #1e1b18;
             width: 100%;
+            background-color: #1e1b18;
         }
 
-        /* À partir des grands écrans (MD = 768px+), la sidebar prend sa taille fixe */
+        /* La barre laterale reste dans le flux pour ne pas recouvrir le contenu. */
         @media (min-width: 768px) {
             .sidebar {
-                width: 260px;
+                width: 280px;
+                min-width: 280px;
                 min-height: 100vh;
             }
+        }
+
+        .manager-content {
+            min-width: 0;
         }
 
         .sidebar .nav-link {
@@ -71,8 +76,14 @@
         </button>
     </div>
 
-    {{-- SIDEBAR (Pliable sur mobile, fixe sur PC) --}}
-    <aside id="mobileSidebar" class="sidebar collapse d-md-flex text-white flex-column justify-content-between p-3 flex-shrink-0">
+    {{-- SIDEBAR (Pliable sur mobile, toujours visible sur PC) --}}
+    <aside id="mobileSidebar" class="sidebar collapse d-md-flex text-white flex-column justify-content-between p-3 flex-shrink-0"
+           style="background: linear-gradient(rgba(20, 20, 20, {{ View::yieldContent('sidebar-opacity', '0.5') }}), rgba(20, 20, 20, {{ View::yieldContent('sidebar-opacity', '0.5') }})), url('{{ asset('images/' . View::yieldContent('sidebar-image', 'poisson-supervision.jpg')) }}');
+                  background-size: cover;
+                  background-position: center;
+                  background-repeat: no-repeat;
+                  z-index: 1000;">
+
         <div>
             {{-- En-tête Sidebar --}}
             <div class="mb-4 d-none d-md-block">
@@ -129,11 +140,10 @@
                 </button>
             </form>
         </div>
-
     </aside>
 
-    {{-- CONTENU PRINCIPAL (Flex-grow pour occuper tout le reste de l'écran) --}}
-    <div class="flex-grow-1 d-flex flex-column min-vh-100 overflow-auto">
+    {{-- CONTENU PRINCIPAL --}}
+    <div class="manager-content flex-grow-1 d-flex flex-column min-vh-100">
 
         {{-- En-tête supérieur --}}
         <header class="px-4 py-3 bg-white d-flex justify-content-between align-items-center border-bottom shadow-sm">

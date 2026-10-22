@@ -1,6 +1,7 @@
 @extends('layouts.gerant')
 @section('title', 'Commandes livrées')
-
+@section('sidebar-image', 'Poisson-Supervision.jpg')
+@section('sidebar-opacity', '0.5')
 @section('content')
 {{-- En-tête responsive --}}
 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-4">

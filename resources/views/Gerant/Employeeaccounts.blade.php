@@ -1,6 +1,7 @@
 @extends('layouts.Gerant')
 @section('title', 'Membres de la Brigade')
-
+@section('sidebar-image', 'hibiscuis.jpg')
+@section('sidebar-opacity', '0.55')
 @section('content')
 {{-- Formulaire de création rapide d'accès --}}
 <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">

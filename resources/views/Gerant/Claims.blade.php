@@ -1,6 +1,7 @@
 @extends('layouts.Gerant')
 @section('title', 'Réclamations & Arbitrage')
-
+@section('sidebar-image', 'jus-orange.jpg')
+@section('sidebar-opacity', '0.65')
 @section('content')
 <div class="container-fluid px-0">
     @if (session('status'))
@@ -22,22 +23,32 @@
             <h1 class="h2 fw-bold text-dark m-0">Réclamations & Arbitrage Litiges</h1>
         </div>
 
-        {{-- Uniquement les 3 boutons de filtres --}}
+        {{-- Filtres par étape de traitement --}}
         <div class="d-flex align-items-center gap-3 flex-wrap pt-2">
-            <button class="btn btn-dark fw-semibold px-3 py-2 rounded-3 d-flex flex-column align-items-center shadow-sm" style="background-color: #1a1a1a;">
+            <a href="{{ route('gerant.claims.index', ['filter' => 'to_process']) }}"
+               @class([
+                   'btn fw-semibold px-3 py-2 rounded-3 shadow-sm',
+                   'btn-dark' => $activeFilter === 'to_process',
+                   'btn-light bg-white text-secondary' => $activeFilter !== 'to_process',
+               ])>
                 <span>À traiter</span>
                 <span class="badge bg-danger rounded-circle mt-1 px-2 py-1" style="font-size: 0.65rem;">
                     {{ $summary['open'] + $summary['in_progress'] }}
                 </span>
-            </button>
+            </a>
 
-            <button class="btn btn-light bg-white border-0 fw-medium px-3 py-3 rounded-3 shadow-sm text-secondary">
+            <a href="{{ route('gerant.claims.index', ['filter' => 'processed']) }}"
+               @class([
+                   'btn fw-semibold px-3 py-3 rounded-3 shadow-sm',
+                   'btn-dark' => $activeFilter === 'processed',
+                   'btn-light bg-white text-secondary' => $activeFilter !== 'processed',
+               ])>
                 Traitées
-            </button>
+                <span class="badge bg-secondary rounded-circle mt-1 px-2 py-1" style="font-size: 0.65rem;">
+                    {{ $summary['resolved'] + $summary['rejected'] }}
+                </span>
+            </a>
 
-            <button class="btn btn-light bg-white border-0 fw-medium px-3 py-3 rounded-3 shadow-sm text-secondary">
-                Remboursées
-            </button>
         </div>
     </div>
 
@@ -69,8 +80,17 @@
                                 Litige #{{ $selectedClaim->code ?? 'REC-'.$selectedClaim->id }} • {{ $selectedClaim->order?->item_name ?? $selectedClaim->subject }}
                             </p>
                         </div>
-                        <span class="badge bg-danger-subtle text-danger px-3 py-2 fw-bold rounded-3">Action requise</span>
+                        <span class="badge {{ $selectedClaim->status === 'in_progress' ? 'bg-warning-subtle text-warning-emphasis' : 'bg-secondary-subtle text-secondary' }} px-3 py-2 fw-bold rounded-3">
+                            {{ $selectedClaim->status === 'in_progress' ? 'Action requise' : str_replace('_', ' ', ucfirst($selectedClaim->status)) }}
+                        </span>
                     </div>
+
+                    @if($selectedClaim->response)
+                        <div class="alert alert-light border rounded-3 mb-4">
+                            <h6 class="fw-bold text-dark mb-2">Réponse de l'équipe</h6>
+                            <p class="text-muted mb-0">{{ $selectedClaim->response }}</p>
+                        </div>
+                    @endif
 
                     <div class="row g-4 mb-4">
                         <div class="col-12 col-md-6">
@@ -108,22 +128,28 @@
                         </div>
                     </div>
 
-                    <form action="{{ route('gerant.claims.review', $selectedClaim) }}" method="POST" class="mt-auto pt-3 border-top">
-                        @csrf
-                        @method('PATCH')
-                        <div class="row g-2">
-                            <div class="col-12 col-sm-7">
-                                <button type="submit" name="decision" value="approved" class="btn w-100 py-3 fw-bold rounded-3 text-dark shadow-sm d-flex align-items-center justify-content-center gap-2" style="background-color: #cfbd97;">
-                                    <i class="fa-regular fa-circle-check fs-5"></i> Valider la solution ({{ number_format($selectedClaim->compensation_amount ?? 2000, 0, ',', ' ') }} F)
-                                </button>
+                    @if($selectedClaim->status === 'in_progress' && filled($selectedClaim->response))
+                        <form action="{{ route('gerant.claims.review', $selectedClaim) }}" method="POST" class="mt-auto pt-3 border-top">
+                            @csrf
+                            @method('PATCH')
+                            <div class="row g-2">
+                                <div class="col-12 col-sm-7">
+                                    <button type="submit" name="decision" value="approved" class="btn w-100 py-3 fw-bold rounded-3 text-dark shadow-sm d-flex align-items-center justify-content-center gap-2" style="background-color: #cfbd97;">
+                                        <i class="fa-regular fa-circle-check fs-5"></i> Valider la solution ({{ number_format($selectedClaim->compensation_amount ?? 2000, 0, ',', ' ') }} F)
+                                    </button>
+                                </div>
+                                <div class="col-12 col-sm-5">
+                                    <button type="submit" name="decision" value="rejected" class="btn btn-outline-secondary w-100 py-3 fw-bold rounded-3 bg-light border-0 text-muted d-flex align-items-center justify-content-center gap-2">
+                                        <i class="fa-solid fa-link-slash"></i> Rejeter / Ajuster
+                                    </button>
+                                </div>
                             </div>
-                            <div class="col-12 col-sm-5">
-                                <button type="submit" name="decision" value="rejected" class="btn btn-outline-secondary w-100 py-3 fw-bold rounded-3 bg-light border-0 text-muted d-flex align-items-center justify-content-center gap-2">
-                                    <i class="fa-solid fa-link-slash"></i> Rejeter / Ajuster
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+                        </form>
+                    @elseif($selectedClaim->status === 'open')
+                        <p class="text-muted small mt-auto pt-3 border-top mb-0">Cette réclamation attend une réponse de l'équipe avant arbitrage.</p>
+                    @else
+                        <p class="text-muted small mt-auto pt-3 border-top mb-0">Cette réclamation a déjà été traitée.</p>
+                    @endif
                 </div>
             @else
                 <div class="card border-0 shadow-sm rounded-4 p-5 bg-white h-100 d-flex flex-column align-items-center justify-content-center text-center">
