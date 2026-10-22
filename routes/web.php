@@ -26,10 +26,7 @@ use App\Http\Controllers\Admin\LoyaltyController as AdminLoyaltyController;
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\PaymentController;
 
-use App\Http\Controllers\Employee\EmployeeOrderController;
-use App\Http\Controllers\Employee\EmployeeMenuController;
-use App\Http\Controllers\Employee\EmployeeReclamationController;
-use App\Http\Controllers\Employee\EmployeeStatController;
+use App\Http\Controllers\Employee as Emp;
 
 // PAGE D'ACCUEIL PUBLIQUE
 Route::get('/', function () {
@@ -116,14 +113,14 @@ Route::middleware(['auth', 'role:admin'])
 
 // 5. ESPACE EMPLOYÉ
 Route::middleware(['auth', 'role:employee'])->prefix('employe')->name('employe.')->group(function () {
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/commandes', [OrderController::class, 'index'])->name('commandes.index');
-    Route::get('/commandes/{commande}', [OrderController::class, 'show'])->name('commandes.show');
-    Route::patch('/commandes/{commande}', [OrderController::class, 'update'])->name('commandes.update');
-    Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
-    Route::patch('/menu/{plat}', [MenuController::class, 'update'])->name('menu.update');
-    Route::get('/reclamations', [ReclamationController::class, 'index'])->name('reclamations.index');
-    Route::get('/reclamations/{reclamation}', [ReclamationController::class, 'show'])->name('reclamations.show');
-    Route::patch('/reclamations/{reclamation}', [ReclamationController::class, 'update'])->name('reclamations.update');
-    Route::get('/statistiques', [StatController::class, 'index'])->name('statistiques');
+    Route::get('/', [Emp\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/commandes', [Emp\OrderController::class, 'index'])->name('commandes.index');
+    Route::get('/commandes/{commande}', [Emp\OrderController::class, 'show'])->name('commandes.show');
+    Route::patch('/commandes/{commande}', [Emp\OrderController::class, 'update'])->name('commandes.update');
+    Route::get('/menu', [Emp\MenuController::class, 'index'])->name('menu.index');
+    Route::patch('/menu/{plat}', [Emp\MenuController::class, 'update'])->name('menu.update');
+    Route::get('/reclamations', [Emp\ReclamationController::class, 'index'])->name('reclamations.index');
+    Route::get('/reclamations/{reclamation}', [Emp\ReclamationController::class, 'show'])->name('reclamations.show');
+    Route::patch('/reclamations/{reclamation}', [Emp\ReclamationController::class, 'update'])->name('reclamations.update');
+    Route::get('/statistiques', [Emp\StatController::class, 'index'])->name('statistiques');
 });
