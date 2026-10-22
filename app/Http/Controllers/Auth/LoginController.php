@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rules\Password;
 
 class LoginController extends Controller
 {
@@ -16,23 +15,34 @@ class LoginController extends Controller
 
     /* valide les identifiants et utilise Auth::attempt()
     si ça échoue, une érreur est renvoyée
-    si elle réussie, la session est regénérée et l'utilisateur se dirige vers le tableau de bord */
-    public function store(Request $request) {
+    si elle réussie, la session est regénérée et l'utilisateur se dirige vers les pages appropriées */
+    public function store(Request $request)
+{
+    $credentials = $request->validate([
+        'email' => ['required', 'string', 'email'],
+        'password' => ['required', 'string'],
+    ]);
 
-        $credentials = $request->validate([
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
-        ]);
-
-        if (! Auth::attempt($credentials + ['is_active' => true], $request->boolean('remember'))) {
-            return back()->withErrors([
-                'email' => "Identifiants incorrects.",
-            ])->onlyInput('email');
-        }
-
-        $request->session()->regenerate();
-        return redirect()->intended(route('etudiant.accueil'));
+    if (! Auth::attempt($credentials + ['is_active' => true], $request->boolean('remember'))) {
+        return back()->withErrors([
+            'email' => "Identifiants incorrects.",
+        ])->onlyInput('email');
     }
+
+    $request->session()->regenerate();
+
+    $user = Auth::user();
+
+    // Redirection selon le code du rôle
+    $targetRoute = match ($user->role?->code) {
+        'admin'    => 'admin.dashboard',
+        'employee' => 'employee.orders', // ou la route souhaitée pour les employés
+        'student'  => 'etudiant.accueil',
+        default    => 'home',
+    };
+
+    return redirect()->intended(route($targetRoute));
+}
 
     /*déconnecter l'utilisateur, invalide la session
     et regénère un jeton de sécurité CSRF  */
