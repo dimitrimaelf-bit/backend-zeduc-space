@@ -19,6 +19,7 @@ $promotions = Promotion::orderBy('created_at', 'desc')->get(); //Recuperation de
     public function store(Request $request)//Enregistre la promotion et redirige : Sauvegarde d'une nouvelle promotion
     {
         $validated = $request->validate([// Validation des regles pour une offre promotionnelle
+            'type'        => 'required|in:promotion,event', // Type : promotion ou événement
            'title'       => 'required|string|max:150', // Titre de la promotion obligatoire
             'description' => 'nullable|string',// Description detaillee optionnelle
             'image_url'   => 'nullable|url|max:500',// URL de l'affiche publicitaire
@@ -44,7 +45,7 @@ $promotions = Promotion::orderBy('created_at', 'desc')->get(); //Recuperation de
     {
         $promotion = Promotion::findOrFail($id);// Recuperation de l'enregistrement a mettre a jour
         $validated = $request->validate([// Validation des champs modifies
-            
+            'type'        => 'required|in:promotion,event', // Type : promotion ou événement
             'title'       => 'required|string|max:150',// Titre requis
             'description' => 'nullable|string',// Description
             'image_url'   => 'nullable|url|max:500', // URL d'image validee

@@ -25,8 +25,8 @@ class AccueilController extends Controller
             ->limit(4)
             ->get();
 
-        // Promotions en cours : actives et dont les dates encadrent aujourd'hui
-        // (une date NULL = pas de limite)
+        // Offres (promotions et événements) actives aujourd'hui
+        // On affiche à la fois les promotions et les événements qui sont en cours aujourd'hui
         $promotions = Promotion::where('is_active', true)
             ->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
             ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', now()))

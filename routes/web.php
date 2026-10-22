@@ -14,6 +14,7 @@ use App\Http\Controllers\Etudiant\AccueilController;
 use App\Http\Controllers\CookieController;
 use App\Http\Controllers\Etudiant\ParrainageController;
 use App\Http\Controllers\Etudiant\PaiementController;
+use App\Http\Controllers\Etudiant\EvenementController;
 
 
 use App\Http\Controllers\Admin\EmployeeController;
@@ -93,7 +94,10 @@ Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(functi
     Route::get('/reclamations', [ReclamationController::class, 'index'])->name('reclamations.index');
     Route::get('/reclamations/nouveau', [ReclamationController::class, 'create'])->name('reclamations.create');
     Route::post('/reclamations/nouveau', [ReclamationController::class, 'store'])->name('reclamations.store');
-        // --- PARRAINAGE ---
+
+    // --- ÉVÉNEMENTS ET PROMOTIONS ---
+    Route::get('/evenements', [EvenementController::class, 'index'])->name('evenements.index');
+
     // --- PARRAINAGE ---
     Route::post('/parrainage/generer', [ParrainageController::class, 'generer'])->name('parrainage.generer');
     Route::post('/parrainage/utiliser', [ParrainageController::class, 'utiliser'])->name('parrainage.utiliser');

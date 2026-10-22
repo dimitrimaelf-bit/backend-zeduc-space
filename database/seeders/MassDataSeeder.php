@@ -12,22 +12,79 @@ class MassDataSeeder extends Seeder
     public function run(): void
     {
         // ==========================================
-        // 1. AJOUT MASSIF DE PROMOTIONS
+        // 1. AJOUT MASSIF DE PROMOTIONS ET EVENEMENTS
         // ==========================================
-        
-        // Tableau contenant les différentes offres promotionnelles à insérer
+
+        // Tableau contenant les promotions et evenements
+        // - EN COURS AUJOURD'HUI : S'affichent a l'accueil ET sur la page Evenements
+        // - PLANIFIES POUR LES JOURS SUIVANTS : Uniquement sur la page Evenements & Promotions
         $promotions = [
-            ['title' => 'Happy Hour', 'description' => '-20% sur les boissons de 14h à 16h', 'is_active' => true],
-            ['title' => 'Menu Duo', 'description' => '2 Plats achetés = 1 Boisson offerte', 'is_active' => true],
-            ['title' => 'Livraison Gratuite', 'description' => 'Pour toute commande de plus de 5000 F', 'is_active' => true],
+            // --- EN COURS AUJOURD'HUI (S'affichent a l'accueil ET sur la page Evenements) ---
+            [
+                'type'        => 'promotion',
+                'title'       => 'Happy Hour',
+                'description' => '-20% sur toutes les boissons fraiches de 14h a 16h.',
+                'starts_at'   => now()->startOfDay(),
+                'ends_at'     => now()->endOfDay(),
+                'is_active'   => true,
+            ],
+            [
+                'type'        => 'promotion',
+                'title'       => 'Menu Duo Etudiant',
+                'description' => '2 Plats achetes = 1 Boisson offerte immediatement.',
+                'starts_at'   => now()->startOfDay(),
+                'ends_at'     => now()->addDays(2)->endOfDay(),
+                'is_active'   => true,
+            ],
+            [
+                'type'        => 'event',
+                'title'       => 'Quiz Musical du Midi',
+                'description' => 'Viens tester ta culture musicale a la pause et gagne des points de fidelite !',
+                'starts_at'   => now()->startOfDay(),
+                'ends_at'     => now()->endOfDay(),
+                'is_active'   => true,
+            ],
+
+            // --- PLANIFIES POUR LES JOURS SUIVANTS (Uniquement sur la page Evenements & Promotions) ---
+            [
+                'type'        => 'event',
+                'title'       => 'Tournoi FIFA & Gaming Ucac-Icam',
+                'description' => 'Grand tournoi sur ecran geant a l\'espace detente. Inscription gratuite, 50 points de fidelite et un menu complet pour le vainqueur !',
+                'starts_at'   => now()->addDays(2)->setHour(15)->setMinute(0),
+                'ends_at'     => now()->addDays(2)->setHour(19)->setMinute(0),
+                'is_active'   => true,
+            ],
+            [
+                'type'        => 'promotion',
+                'title'       => 'Vendredi Livraison Gratuite',
+                'description' => 'Frais de livraison offerts pour toute commande superieure a 5 000 F.',
+                'starts_at'   => now()->addDays(3)->startOfDay(),
+                'ends_at'     => now()->addDays(3)->endOfDay(),
+                'is_active'   => true,
+            ],
+            [
+                'type'        => 'event',
+                'title'       => 'Soiree Karaoke & Grillades',
+                'description' => 'Ambiance festive entre etudiants avec menu special grillades et boissons a prix reduit.',
+                'starts_at'   => now()->addDays(5)->setHour(18)->setMinute(30),
+                'ends_at'     => now()->addDays(5)->setHour(22)->setMinute(0),
+                'is_active'   => true,
+            ],
+            [
+                'type'        => 'promotion',
+                'title'       => 'Semaine du Poulet DG',
+                'description' => '-500 F de reduction immediate sur le Poulet DG toute la semaine prochaine.',
+                'starts_at'   => now()->addDays(7)->startOfDay(),
+                'ends_at'     => now()->addDays(12)->endOfDay(),
+                'is_active'   => true,
+            ],
         ];
 
-        // Parcours du tableau des promotions
+        // Parcours du tableau des promotions et événements
         foreach ($promotions as $promo) {
-            // firstOrCreate vérifie si la promotion existe déjà grâce au titre.
-            // Si elle existe, il ne fait rien ; sinon, il l'insère en base de données.
-            Promotion::firstOrCreate(
-                ['title' => $promo['title']], 
+            // updateOrCreate met à jour si existe déjà, sinon crée
+            Promotion::updateOrCreate(
+                ['title' => $promo['title']],
                 $promo
             );
         }

@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             RolesAndSettingsSeeder::class,
             MassDataSeeder::class,
             OrderSeeder::class,
+            UpdateMenuImagesSeeder::class, // Met à jour les images des plats et boissons
         ]);
     }
 }

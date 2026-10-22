@@ -160,6 +160,17 @@
         object-fit: cover;
         position: absolute;
         inset: 0;
+        opacity: 0.75; /* Réduit la visibilité pour que les écritures soient lisibles */
+    }
+
+    .promo-content {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        padding: 1.5rem;
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 8px;
+        color: #fff;
     }
 
     /* Filtres Top 10 */
@@ -196,11 +207,8 @@
     <div class="container">
         <!-- Logo + Nom -->
         <a class="navbar-brand d-flex align-items-center" href="{{ route('etudiant.accueil') }}">
-            <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
-                 style="width: 42px; height: 42px; border: 1px solid var(--miam-gold); color: var(--miam-gold);">
-                <i class="bi bi-shop"></i>
-            </div>
-            <div>
+            <img src="{{ asset('images/Etudiant/logo.png') }}" alt="ZeDuc@Space" style="height: 45px; width: auto; border-radius: 8px;">
+            <div class="ms-2">
                 <div class="font-serif fw-semibold text-white lh-1" style="font-size: 1.2rem;">ZeDuc@Space</div>
                 <div class="text-uppercase" style="font-size: 0.6rem; letter-spacing: 2px; color: var(--miam-gold);">Mon Miam Miam</div>
             </div>
@@ -223,7 +231,7 @@
                     <a class="nav-link" href="{{ route('etudiant.reclamations.index') }}">Historique</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#promotions">Jeux et événements</a>
+                    <a class="nav-link" href="{{ route('etudiant.evenements.index') }}">Événements et promotions</a>
                 </li>
             </ul>
         </div>
@@ -345,36 +353,79 @@
     <div class="container">
         <div class="row g-4">
             
-            <!-- Colonne Gauche : Promotions et événements -->
+            <!-- Colonne Gauche : Événements et promotions du jour -->
             <div class="col-lg-7">
-                <div class="section-box h-100">
-                    <h3 class="font-serif-italic mb-4" style="font-size: 1.65rem;">Promotions et événements</h3>
+                <div class="miam-card h-100 d-flex flex-column justify-content-between p-4 bg-white rounded-4 shadow-sm">
 
+                    <!-- En-tête avec le bouton Voir plus -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="font-serif-italic mb-0" style="font-size: 1.5rem;">Événements et promotions du jour</h4>
+                            <p class="text-muted small mb-0">Les offres actives aujourd'hui au campus</p>
+                        </div>
+                        <a href="{{ route('etudiant.evenements.index') }}"
+                           class="btn btn-sm rounded-pill px-3 py-2 fw-medium d-inline-flex align-items-center gap-1"
+                           style="background-color: #f8f5f0; color: #1f1f1f; border: 1px solid #e2d9c8; text-decoration: none;">
+                            Voir plus <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <!-- Cartes des offres du jour -->
                     <div class="row g-3">
                         @forelse($promotions as $promo)
                             <div class="col-md-6">
-                                <div class="promo-poster" title="{{ $promo->description }}">
-                                    @if($promo->image_url)
-                                        <img src="{{ asset($promo->image_url) }}" alt="{{ $promo->title }}">
-                                    @else
-                                        <div class="text-center p-3">
-                                            <div class="fw-semibold text-dark mb-1">{{ $promo->title }}</div>
-                                            @if($promo->description)
-                                                <div class="small">{{ $promo->description }}</div>
+                                <div class="p-3 rounded-4 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden"
+                                     style="background: linear-gradient(145deg, #232220 0%, #161514 100%); color: #fff; border: 1px solid rgba(197, 160, 89, 0.35);">
+
+                                    <div>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            @if(($promo->type ?? 'promotion') === 'event')
+                                                <span class="badge rounded-pill px-2 py-1" style="background-color: rgba(56, 189, 248, 0.2); color: #7dd3fc; font-size: 0.7rem;">
+                                                    <i class="bi bi-calendar-event me-1"></i> Événement
+                                                </span>
+                                            @else
+                                                <span class="badge rounded-pill px-2 py-1" style="background-color: rgba(197, 160, 89, 0.2); color: #e5c158; font-size: 0.7rem;">
+                                                    <i class="bi bi-stars me-1"></i> Offre du jour
+                                                </span>
                                             @endif
+
+                                            <span class="small" style="color: #a8a29e; font-size: 0.72rem;">
+                                                <i class="bi bi-clock me-1"></i> Aujourd'hui
+                                            </span>
                                         </div>
-                                    @endif
+
+                                        <h5 class="font-serif-italic mb-1 text-white" style="font-size: 1.25rem;">
+                                            {{ $promo->title }}
+                                        </h5>
+                                        <p class="small mb-3" style="color: #d6d3d1; line-height: 1.4;">
+                                            {{ $promo->description }}
+                                        </p>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center pt-2 border-top" style="border-color: rgba(255,255,255,0.1) !important;">
+                                        <span class="small" style="color: #e5c158; font-size: 0.75rem;">
+                                            En cours
+                                        </span>
+                                        <a href="{{ route('etudiant.menu.index') }}" class="text-white small text-decoration-none fw-medium">
+                                            Commander &rarr;
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         @empty
-                            <!-- Placeholders identiques à la maquette Figma si la base est vide -->
-                            <div class="col-md-6">
-                                <div class="promo-poster">Affiche promotion</div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="promo-poster">Affiche événement ou mini-jeu</div>
+                            <div class="col-12">
+                                <div class="p-4 rounded-4 text-center text-muted" style="background-color: #f8f5f0;">
+                                    Aucune offre spéciale aujourd'hui. Découvre celles des prochains jours !
+                                </div>
                             </div>
                         @endforelse
+                    </div>
+
+                    <!-- Lien de bas de carte -->
+                    <div class="mt-3 pt-2 text-end">
+                        <a href="{{ route('etudiant.evenements.index') }}" class="small text-muted text-decoration-underline">
+                            Voir le calendrier des prochains événements &rarr;
+                        </a>
                     </div>
                 </div>
             </div>
@@ -481,7 +532,10 @@
 <!-- ================= FOOTER ================= -->
 <footer style="background-color: var(--miam-footer); color: #8c857b; font-size: 0.8rem;" class="py-4">
     <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-        <div>&copy; 2026 ZeDuc@Space &mdash; Mon Miam Miam</div>
+        <div class="d-flex align-items-center gap-2">
+            <img src="{{ asset('images/Etudiant/logo.png') }}" alt="ZeDuc@Space" style="height: 30px; width: auto; border-radius: 6px;">
+            <span>&copy; 2026 ZeDuc@Space &mdash; Mon Miam Miam</span>
+        </div>
         <div>Fait avec soin pour les étudiants de l'Institut Ucac-Icam</div>
     </div>
 </footer>

@@ -34,7 +34,7 @@ class OrderController extends Controller
             $subtotal += $item['price_fcfa'] * $item['quantity'];
         }
 
-        DB::transaction(function () use ($cart, $request, $subtotal) {
+        $order = DB::transaction(function () use ($cart, $request, $subtotal) {
             $user = Auth::user();
 
             // 1. Récupération du compte de fidélité
@@ -68,9 +68,9 @@ class OrderController extends Controller
             // Calcul du total final à payer après déduction
             $total_fcfa = $subtotal - $discount_fcfa;
 
-            // 3. Gain de points : +1 point pour avoir passé la commande
-            $pointsEarned = 1;
-            $loyaltyAccount->increment('balance_points', $pointsEarned);
+            // 3. NOTE : Les points ne seront crédités QUE lorsque la commande sera terminée (status = completed)
+            // Cela évite qu'un étudiant passe une commande, gagne son point, puis l'annule en gardant son point.
+            // L'ajout des points se fera dans le contrôleur Admin/OrderController lors de la validation de la commande.
 
             // 4. Création de l'entête de la commande
             $order = Order::create([
@@ -82,7 +82,7 @@ class OrderController extends Controller
                 'discount_fcfa' => $discount_fcfa,
                 'total_fcfa' => $total_fcfa,
                 'loyalty_points_used' => $pointsUsed,
-                'loyalty_points_earned' => $pointsEarned, // Enregistrement du point gagné
+                'loyalty_points_earned' => 0, // Les points seront crédités uniquement lors de la finalisation de la commande
                 'status' => 'pending'
             ]);
 
@@ -109,14 +109,9 @@ class OrderController extends Controller
                 ]);
             }
 
-            // 7. Historique : Trace du gain du point
-            \App\Models\LoyaltyTransaction::create([
-                'user_id' => $user->id,
-                'order_id' => $order->id,
-                'type' => 'earn',
-                'points' => $pointsEarned,
-                'description' => "Point de fidélité gagné pour la commande {$order->order_number}",
-            ]);
+            // 7. NOTE : L'historique du gain de points sera créé uniquement lors de la finalisation de la commande
+            // dans le contrôleur Admin/OrderController (lorsque le statut passe à 'completed')
+
           return $order;
         });
 

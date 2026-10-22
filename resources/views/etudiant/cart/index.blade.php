@@ -85,6 +85,18 @@
                 @endif
             </div>
 
+            {{-- Sélection de la méthode de paiement --}}
+            <div class="mb-3">
+                <label for="payment_method" class="form-label fw-bold">Méthode de paiement</label>
+                <select name="payment_method" id="payment_method" class="form-select" required>
+                    <option value="mobile_money">Mobile Money (Orange Money / MTN MoMo)</option>
+                    <option value="cash">Espèces (Paiement sur place)</option>
+                </select>
+                <small class="form-text text-muted">
+                    Pour le test en mode simulation, utilise le numéro <strong>0707070707</strong> avec OTP <strong>123456</strong> (Orange Money) ou <strong>0707070707</strong> (MTN MoMo).
+                </small>
+            </div>
+
             {{-- Bouton de soumission du formulaire de commande --}}
             <button type="submit" class="btn btn-success">Valider la commande</button>
         </form>

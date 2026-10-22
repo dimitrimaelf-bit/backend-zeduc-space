@@ -227,11 +227,8 @@
 <nav class="navbar navbar-expand-lg navbar-dark navbar-miam sticky-top">
     <div class="container">
        <a class="navbar-brand d-flex align-items-center" href="{{ route('etudiant.accueil') }}">
-            <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
-                 style="width: 42px; height: 42px; border: 1px solid var(--miam-gold); color: var(--miam-gold);">
-                <i class="bi bi-shop"></i>
-            </div>
-            <div>
+            <img src="{{ asset('images/Etudiant/logo.png') }}" alt="ZeDuc@Space" style="height: 45px; width: auto; border-radius: 8px;">
+            <div class="ms-2">
                 <div class="font-serif fw-semibold text-white lh-1" style="font-size: 1.2rem;">ZeDuc@Space</div>
                 <div class="text-uppercase" style="font-size: 0.6rem; letter-spacing: 2px; color: var(--miam-gold);">Mon Miam Miam</div>
             </div>
@@ -253,7 +250,7 @@
                     <a class="nav-link" href="{{ route('etudiant.reclamations.index') }}">Historique</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('etudiant.accueil') }}#promotions">Jeux et événements</a>
+                    <a class="nav-link" href="{{ route('etudiant.evenements.index') }}">Événements et promotions</a>
                 </li>
             </ul>
         </div>
@@ -293,7 +290,7 @@
         @foreach($categories as $category)
             <a href="#section-cat-{{ $category->id }}" class="category-pill">{{ $category->name }}</a>
         @endforeach
-        <a href="#section-promotions" class="category-pill">Promotions</a>
+        <a href="#section-promotions" class="category-pill">Événements et promotions</a>
     </div>
 
     <!-- ================= SECTION : PLATS DU JOUR ================= -->
