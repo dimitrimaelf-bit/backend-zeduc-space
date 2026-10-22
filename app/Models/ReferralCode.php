@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ReferralCode extends Model
 {
+    use HasFactory;
     const CREATED_AT = "created_at";
     const UPDATED_AT = null; // Seulement 'created_at'
 

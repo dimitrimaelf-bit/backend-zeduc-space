@@ -31,7 +31,7 @@ class LoginController extends Controller
         }
 
         $request->session()->regenerate();
-        return redirect()->intended(route('home'));
+        return redirect()->intended(route('etudiant.accueil'));
     }
 
     /*déconnecter l'utilisateur, invalide la session

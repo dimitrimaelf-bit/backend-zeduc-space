@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\HomeController;
+
 use App\Http\Controllers\Etudiant\MenuController;
 use App\Http\Controllers\Etudiant\CartController;
 use App\Http\Controllers\Etudiant\OrderController;
@@ -29,6 +31,9 @@ use App\Http\Controllers\Employee\EmployeeStatController;
 
 // routes accessibles uniquement quand on est pas connecté
 Route::middleware('guest')->group(function () {
+
+    Route::get('/', [HomeController::class, 'index'])->name('home');
+
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store']);
 

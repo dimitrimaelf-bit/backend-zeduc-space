@@ -1,93 +1,10 @@
-@extends('layouts.app')
+@extends('layouts.etudiant')
 
-@section('content')
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+@section('title', 'Commander')
 
+@push('styles')
 <style>
-    :root {
-        --miam-bg-cream: #f6f1e7;
-        --miam-gold: #cfc096;
-        --miam-gold-hover: #bdae82;
-        --miam-dark: #0a0a0a;
-        --font-serif: 'Playfair Display', Georgia, serif;
-        --font-sans: 'Inter', 'Segoe UI', sans-serif;
-    }
-
-    body {
-        font-family: var(--font-sans);
-        background-color: var(--miam-bg-cream);
-        color: #1a1a1a;
-    }
-
-    .font-serif-italic {
-        font-family: var(--font-serif);
-        font-style: italic;
-    }
-
-    .font-serif {
-        font-family: var(--font-serif);
-    }
-
-    /* Navbar */
-    .navbar-miam {
-        background-color: var(--miam-dark);
-        padding: 0.85rem 0;
-    }
-
-    .navbar-miam .nav-link {
-        color: #d1d1d1 !important;
-        font-size: 0.9rem;
-        margin: 0 0.75rem;
-        padding-bottom: 0.35rem;
-        position: relative;
-    }
-
-    .navbar-miam .nav-link:hover,
-    .navbar-miam .nav-link.active {
-        color: var(--miam-gold) !important;
-    }
-
-    .navbar-miam .nav-link.active::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background-color: var(--miam-gold);
-    }
-
-    .badge-user {
-        background-color: var(--miam-gold);
-        color: #111;
-        font-weight: 600;
-        font-size: 0.85rem;
-        padding: 0.5rem 1.1rem;
-        border-radius: 50rem;
-        text-decoration: none;
-    }
-
-    /* Onglets de filtres (Pills) */
-    .category-pill {
-        border-radius: 50rem;
-        padding: 0.35rem 1.15rem;
-        font-size: 0.82rem;
-        font-weight: 500;
-        text-decoration: none;
-        border: 1px solid #333;
-        color: #111;
-        background: transparent;
-        transition: all 0.2s;
-    }
-
-    .category-pill.active,
-    .category-pill:hover {
-        background: #000;
-        color: #fff;
-        border-color: #000;
-    }
-
-    /* Lignes des articles du menu */
+    /* ================= LIGNES DU MENU ================= */
     .menu-row {
         padding: 1.1rem 0;
         border-bottom: 1px solid rgba(0, 0, 0, 0.08);
@@ -115,7 +32,7 @@
         flex-shrink: 0;
     }
 
-    /* Boutons + et - */
+    /* ================= BOUTONS QUANTITÉ + / - ================= */
     .qty-btn-minus {
         width: 32px;
         height: 32px;
@@ -131,10 +48,7 @@
         transition: all 0.15s;
     }
 
-    .qty-btn-minus:hover:not(:disabled) {
-        background: #111;
-        color: #fff;
-    }
+    .qty-btn-minus:hover:not(:disabled) { background: #111; color: #fff; }
 
     .qty-btn-minus:disabled {
         opacity: 0.35;
@@ -156,11 +70,9 @@
         transition: background-color 0.15s;
     }
 
-    .qty-btn-plus:hover {
-        background-color: var(--miam-gold-hover);
-    }
+    .qty-btn-plus:hover:not(:disabled) { background-color: var(--miam-gold-hover); }
 
-    /* Carte Panier en bas */
+    /* ================= BLOC PANIER ================= */
     .cart-box {
         background: #fff;
         border-radius: 18px;
@@ -169,7 +81,7 @@
         box-shadow: 0 6px 24px rgba(0, 0, 0, 0.03);
     }
 
-    /* Sélecteurs Mode de service & Paiement */
+    /* ================= MODE DE SERVICE & PAIEMENT ================= */
     .mode-btn {
         border: 1px solid #222;
         border-radius: 8px;
@@ -218,85 +130,28 @@
         transition: background-color 0.2s;
     }
 
-    .btn-pay-confirm:hover:not(:disabled) {
-        background-color: var(--miam-gold-hover);
-    }
+    .btn-pay-confirm:hover:not(:disabled) { background-color: var(--miam-gold-hover); }
 </style>
+@endpush
 
-<!-- ================= NAVBAR ================= -->
-<nav class="navbar navbar-expand-lg navbar-dark navbar-miam sticky-top">
-    <div class="container">
-       <a class="navbar-brand d-flex align-items-center" href="{{ route('etudiant.accueil') }}">
-            <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
-                 style="width: 42px; height: 42px; border: 1px solid var(--miam-gold); color: var(--miam-gold);">
-                <i class="bi bi-shop"></i>
-            </div>
-            <div>
-                <div class="font-serif fw-semibold text-white lh-1" style="font-size: 1.2rem;">ZeDuc@Space</div>
-                <div class="text-uppercase" style="font-size: 0.6rem; letter-spacing: 2px; color: var(--miam-gold);">Mon Miam Miam</div>
-            </div>
-        </a>
+@section('content')
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMiam">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse justify-content-center" id="navbarMiam">
-            <ul class="navbar-nav mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link active" href="{{ route('etudiant.menu.index') }}">Commander</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('etudiant.loyalty.index') }}">Fidélité et parrainage</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('etudiant.reclamations.index') }}">Historique</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('etudiant.accueil') }}#promotions">Jeux et événements</a>
-                </li>
-            </ul>
-        </div>
-
-        <div class="d-none d-lg-flex align-items-center">
-            <a href="{{ route('etudiant.loyalty.index') }}" class="badge-user">
-                {{ $user->first_name }} {{ strtoupper(substr($user->last_name, 0, 1)) }}. &middot; {{ $balance }} pts
-            </a>
-        </div>
-    </div>
-</nav>
-
-<!-- ================= CONTENU PRINCIPAL ================= -->
 <div class="container py-5" style="max-width: 1020px;">
-
-    <!-- Alertes Flash -->
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-            <i class="bi bi-check-circle-fill me-1"></i> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-    @if(session('error') || $errors->any())
-        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-            {{ session('error') ?? $errors->first() }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
 
     <!-- En-tête -->
     <h1 class="font-serif-italic mb-1" style="font-size: 2.35rem;">Commander</h1>
     <p class="text-muted small mb-4">Compose ta commande, choisis sur place ou en livraison, puis paie.</p>
 
-    <!-- Filtres rapides par ancres -->
+    {{-- Filtres rapides par ancres --}}
     <div class="d-flex flex-wrap gap-2 mb-5">
-        <a href="#section-plats-du-jour" class="category-pill active">Plats du jour</a>
+        <a href="#section-plats-du-jour" class="filter-pill active">Plats du jour</a>
         @foreach($categories as $category)
-            <a href="#section-cat-{{ $category->id }}" class="category-pill">{{ $category->name }}</a>
+            <a href="#section-cat-{{ $category->id }}" class="filter-pill">{{ $category->name }}</a>
         @endforeach
-        <a href="#section-promotions" class="category-pill">Promotions</a>
+        <a href="#section-promotions" class="filter-pill">Promotions</a>
     </div>
 
-    <!-- ================= SECTION : PLATS DU JOUR ================= -->
+    {{-- ================= SECTION : PLATS DU JOUR ================= --}}
     <div id="section-plats-du-jour" class="mb-5">
         <h3 class="font-serif-italic mb-3" style="font-size: 1.45rem;">Plats du jour</h3>
 
@@ -315,7 +170,7 @@
                     </div>
                 </div>
 
-                <!-- Contrôles - / Quantité / + -->
+                {{-- Contrôles - / Quantité / + --}}
                 <div class="d-flex align-items-center gap-3">
                     <form action="{{ route('etudiant.cart.remove') }}" method="POST" class="m-0">
                         @csrf
@@ -338,7 +193,7 @@
         @endforelse
     </div>
 
-    <!-- ================= SECTIONS : CATÉGORIES (Ex: Boissons) ================= -->
+    {{-- ================= SECTIONS : CATÉGORIES ================= --}}
     @foreach($categories as $category)
         @if($category->items->isNotEmpty())
             <div id="section-cat-{{ $category->id }}" class="mb-5">
@@ -390,7 +245,7 @@
         @endif
     @endforeach
 
-    <!-- ================= SECTION : PROMOTIONS ================= -->
+    {{-- ================= SECTION : PROMOTIONS ================= --}}
     <div id="section-promotions" class="mb-4">
         <h3 class="font-serif-italic mb-3" style="font-size: 1.45rem;">Promotions</h3>
 
@@ -410,6 +265,7 @@
                     </div>
                 </div>
 
+                {{-- Les promotions ne sont pas commandables directement --}}
                 <div class="d-flex align-items-center gap-3">
                     <button type="button" class="qty-btn-minus" disabled>&minus;</button>
                     <span class="fw-semibold small" style="min-width: 14px; text-align: center;">0</span>
@@ -421,7 +277,7 @@
         @endforelse
     </div>
 
-    <!-- ================= CASE À COCHER : UTILISER MES POINTS ================= -->
+    {{-- ================= POINTS DE FIDÉLITÉ ================= --}}
     @php
         $canUsePoints = $balance >= 15;
         $missingPoints = max(0, 15 - $balance);
@@ -445,11 +301,11 @@
         </label>
     </div>
 
-    <!-- ================= BLOC PANIER & PAIEMENT ================= -->
+    {{-- ================= BLOC PANIER & PAIEMENT ================= --}}
     <div id="mon-panier" class="cart-box">
         <div class="row g-5">
-            
-            <!-- Colonne Gauche : Récapitulatif Panier -->
+
+            {{-- Colonne Gauche : Récapitulatif Panier --}}
             <div class="col-lg-6 d-flex flex-column justify-content-between">
                 <div>
                     <h3 class="font-serif-italic mb-4" style="font-size: 1.5rem;">Mon panier</h3>
@@ -460,7 +316,9 @@
                             <span class="fw-semibold">{{ number_format($cItem['price_fcfa'] * $cItem['quantity'], 0, ',', ' ') }} F</span>
                         </div>
                     @empty
-                        <p class="text-muted small my-3">Ton panier est vide. Clique sur le bouton <strong>+</strong> d'un plat pour l'ajouter.</p>
+                        <p class="text-muted small my-3">
+                            Ton panier est vide. Clique sur le bouton <strong>+</strong> d'un plat pour l'ajouter.
+                        </p>
                     @endforelse
                 </div>
 
@@ -482,13 +340,13 @@
                 </div>
             </div>
 
-            <!-- Colonne Droite : Formulaire de validation de commande -->
+            {{-- Colonne Droite : Validation de commande --}}
             <div class="col-lg-6">
                 <form action="{{ route('etudiant.order.store') }}" method="POST">
                     @csrf
                     <input type="hidden" name="use_loyalty_points" id="useLoyaltyInput" value="0">
 
-                    <!-- Mode de service -->
+                    {{-- Mode de service --}}
                     <div class="mb-3">
                         <label class="form-label small text-muted mb-2">Mode de service</label>
                         <div class="row g-2">
@@ -503,14 +361,14 @@
                         </div>
                     </div>
 
-                    <!-- Heure d'arrivée -->
+                    {{-- Heure d'arrivée --}}
                     <div class="mb-3">
                         <label for="arrival_time" class="form-label small text-muted mb-1">Heure d'arrivée</label>
                         <input type="time" id="arrival_time" name="arrival_time" value="12:45"
                                class="form-control form-control-sm py-2 shadow-none">
                     </div>
 
-                    <!-- Adresse de livraison -->
+                    {{-- Adresse de livraison --}}
                     <div class="mb-3">
                         <label for="delivery_address" class="form-label small text-muted mb-1">Adresse de livraison</label>
                         <input type="text" id="delivery_address" name="delivery_address"
@@ -519,7 +377,7 @@
                                class="form-control form-control-sm py-2 shadow-none">
                     </div>
 
-                    <!-- Paiement -->
+                    {{-- Paiement --}}
                     <div class="mb-4">
                         <label class="form-label small text-muted d-block mb-2">Paiement</label>
                         <div class="d-flex gap-2">
@@ -542,19 +400,23 @@
 
 </div>
 
+@endsection
+
+@push('scripts')
 <script>
     const subtotalFcfa = {{ $subtotal }};
+
     function toggleLoyaltyDiscount(usePoints) {
-        const discountEl = document.getElementById('discountDisplay');
-        const totalEl = document.getElementById('totalDisplay');
+        const discountEl  = document.getElementById('discountDisplay');
+        const totalEl     = document.getElementById('totalDisplay');
         const hiddenInput = document.getElementById('useLoyaltyInput');
 
-        const discount = usePoints ? Math.min(1000, subtotalFcfa) : 0;
+        const discount   = usePoints ? Math.min(1000, subtotalFcfa) : 0;
         const finalTotal = Math.max(0, subtotalFcfa - discount);
 
         hiddenInput.value = usePoints ? '1' : '0';
         discountEl.textContent = discount.toLocaleString('fr-FR') + ' F';
-        totalEl.textContent = finalTotal.toLocaleString('fr-FR') + ' F';
+        totalEl.textContent    = finalTotal.toLocaleString('fr-FR') + ' F';
     }
 </script>
-@endsection
+@endpush

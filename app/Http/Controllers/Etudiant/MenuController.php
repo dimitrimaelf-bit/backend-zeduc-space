@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Promotion;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
 class MenuController extends Controller
@@ -16,7 +16,7 @@ class MenuController extends Controller
      */
     public function index()
     {
-        $user = auth()->user();
+        $user = Auth::user();
         
         // Récupération du solde de points de fidélité
         $balance = $user ? (int) \App\Models\LoyaltyAccount::whereKey($user->id)->value('balance_points') : 0;

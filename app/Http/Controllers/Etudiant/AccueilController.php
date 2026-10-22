@@ -45,14 +45,20 @@ class AccueilController extends Controller
         };
 
         $topClients = User::whereHas('role', fn ($q) => $q->where('code', 'student'))
-            // withCount crée la colonne "commandes_terminees" sans charger les commandes
+            // Filtre les utilisateurs ayant au moins 1 commande terminée dans la période
+            ->whereHas('orders', function ($q) use ($depuis) {
+                $q->where('status', 'completed');
+                if ($depuis) {
+                    $q->where('created_at', '>=', $depuis);
+                }
+            })
+            // Ajoute le compteur "commandes_terminees" pour l'affichage et le tri
             ->withCount(['orders as commandes_terminees' => function ($q) use ($depuis) {
                 $q->where('status', 'completed');
                 if ($depuis) {
                     $q->where('created_at', '>=', $depuis);
                 }
             }])
-            ->having('commandes_terminees', '>', 0)
             ->orderByDesc('commandes_terminees')
             ->orderBy('first_name')               // départage les ex-aequo
             ->limit(10)

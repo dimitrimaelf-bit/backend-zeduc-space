@@ -8,6 +8,7 @@ use App\Models\LoyaltyTransaction;
 use App\Models\Referral;
 use Illuminate\Support\Facades\Auth;
 
+
 class LoyaltyController extends Controller
 {
     /**
@@ -29,7 +30,10 @@ class LoyaltyController extends Controller
             ->get();
             
         // 3. Récupération du code de parrainage actif de l'étudiant
-        $referralCode = $user->referralCode()->where('is_active', true)->first();
+        $referralCode = $user->referralCode()
+            ->where('is_active', true)
+            ->first()
+            ?->code;
 
         // 4. Récupération de la liste des filleuls (parrainages)
         $referrals = Referral::where('referrer_user_id', $user->id)

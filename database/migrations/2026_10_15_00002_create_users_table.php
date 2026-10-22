@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string("delivery_address")->nullable();
             $table->boolean("is_active")->default(true);
             $table->timestamps();
+            $table->rememberToken();
             $table->index(['role_id', 'is_active']);
         });
     }

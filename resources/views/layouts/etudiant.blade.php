@@ -3,213 +3,319 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {{-- Jeton CSRF, utile si tu fais plus tard des requêtes JavaScript (fetch/AJAX) --}}
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'Accueil') - ZeDuc@Space · Mon Miam Miam</title>
 
-    {{-- Chaque vue peut définir son titre avec @section('title', 'Commander') --}}
-    <title>@yield('title', 'Accueil') - Mon Miam Miam</title>
-
-    {{-- Bootstrap en local (comme ton layout app.blade.php) : fonctionne sans internet --}}
+    {{-- Bootstrap local + icônes --}}
     <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
-    {{-- Icônes Bootstrap Icons (bi bi-...) --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    {{-- Police à empattement pour les titres, comme sur la maquette --}}
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+    {{-- Polices : Serif (titres) + Sans (texte courant) --}}
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
     <style>
-        /* ====== CHARTE GRAPHIQUE (variables réutilisables dans toutes les vues) ====== */
+        /* ================= CHARTE GRAPHIQUE ================= */
         :root {
-            --mm-black: #0e0e0e;   /* barre de navigation, bandeau cookies */
-            --mm-cream: #f4efe4;   /* fond des pages */
-            --mm-gold:  #c8b48a;   /* boutons principaux, accents */
-            --mm-gold-dark: #b39d70;
-            --mm-ink:   #1c1a17;   /* texte principal */
-            --mm-card:  #ffffff;   /* fond des cartes */
+            --miam-bg-cream: #f6f1e7;
+            --miam-gold: #cfc096;
+            --miam-gold-hover: #bdae82;
+            --miam-dark: #0a0a0a;
+            --miam-footer: #191612;
+            --font-serif: 'Playfair Display', Georgia, serif;
+            --font-sans: 'Inter', 'Segoe UI', sans-serif;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--mm-cream);
-            color: var(--mm-ink);
-            /* flex + min-height : le pied de page reste en bas même si la page est courte */
+            font-family: var(--font-sans);
+            background-color: var(--miam-bg-cream);
+            color: #1a1a1a;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
+
         main { flex: 1; }
 
-        /* Titres en police à empattement */
-        h1, h2, h3, .font-serif { font-family: 'Playfair Display', Georgia, serif; }
+        .font-serif        { font-family: var(--font-serif); }
+        .font-serif-italic { font-family: var(--font-serif); font-style: italic; }
 
-        /* ====== BARRE DE NAVIGATION ====== */
-        .mm-navbar { background-color: var(--mm-black); }
-        .mm-navbar .navbar-brand { color: #fff; font-family: 'Playfair Display', serif; font-weight: 600; }
-        .mm-navbar .navbar-brand span { color: var(--mm-gold); }
-        .mm-navbar .nav-link { color: #d6d3cc; font-size: .9rem; padding: .5rem 1rem; }
-        .mm-navbar .nav-link:hover { color: #fff; }
-        /* Lien de la page courante : texte blanc + soulignement or */
-        .mm-navbar .nav-link.active { color: #fff; box-shadow: inset 0 -2px 0 var(--mm-gold); }
+        /* ================= NAVBAR ================= */
+        .navbar-miam { background-color: var(--miam-dark); padding: 0.85rem 0; }
 
-        /* ====== BOUTONS ET CARTES ====== */
-        .btn-gold { background-color: var(--mm-gold); color: var(--mm-black); border: none; font-weight: 600; }
-        .btn-gold:hover { background-color: var(--mm-gold-dark); color: var(--mm-black); }
-        .btn-outline-ink { border: 1px solid var(--mm-ink); color: var(--mm-ink); background: transparent; }
-        .btn-outline-ink:hover { background: var(--mm-ink); color: #fff; }
-
-        .mm-card { background: var(--mm-card); border: 0; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-
-        /* ====== BANDEAU COOKIES (fixe en bas de l'écran) ====== */
-        .cookie-banner {
-            position: fixed; left: 0; right: 0; bottom: 0; z-index: 1050;
-            background: var(--mm-black); color: #d6d3cc; font-size: .85rem;
+        .navbar-miam .nav-link {
+            color: #d1d1d1 !important;
+            font-size: 0.9rem;
+            margin: 0 0.75rem;
+            padding-bottom: 0.35rem;
+            position: relative;
+            transition: color 0.2s;
         }
 
-        /* ====== PIED DE PAGE ====== */
-        .mm-footer { background: var(--mm-black); color: #9b978e; font-size: .8rem; }
+        .navbar-miam .nav-link:hover,
+        .navbar-miam .nav-link.active { color: var(--miam-gold) !important; }
+
+        .navbar-miam .nav-link.active::after {
+            content: "";
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background-color: var(--miam-gold);
+        }
+
+        .badge-user {
+            background-color: var(--miam-gold);
+            color: #111;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 0.5rem 1.1rem;
+            border-radius: 50rem;
+            text-decoration: none;
+        }
+
+        /* ================= BOUTONS ================= */
+        .btn-gold {
+            background-color: var(--miam-gold);
+            color: #111;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border-radius: 10px;
+            padding: 0.65rem 1.4rem;
+            border: none;
+            transition: background-color 0.2s;
+        }
+
+        .btn-gold:hover { background-color: var(--miam-gold-hover); color: #000; }
+
+        .btn-outline-gold {
+            background-color: transparent;
+            color: #fff;
+            border: 1px solid rgba(207, 192, 150, 0.5);
+            font-size: 0.85rem;
+            border-radius: 10px;
+            padding: 0.55rem 1.25rem;
+            transition: all 0.2s;
+        }
+
+        .btn-outline-gold:hover {
+            border-color: var(--miam-gold);
+            background-color: rgba(207, 192, 150, 0.1);
+            color: #fff;
+        }
+
+        .btn-outline-miam {
+            background: #fff;
+            color: #111;
+            border: 1px solid #222;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 0.65rem 1.25rem;
+            transition: all 0.2s;
+        }
+
+        .btn-outline-miam:hover { background: #111; color: #fff; }
+
+        /* ================= CARTES ================= */
+        .miam-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 2.25rem;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+            height: 100%;
+        }
+
+        /* ================= TABLEAUX ================= */
+        .table-miam th {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #8c826d;
+            font-weight: 600;
+            border-bottom: 1px solid #eee8d8;
+            padding-bottom: 0.6rem;
+        }
+
+        .table-miam td {
+            padding: 1rem 0.5rem;
+            border-bottom: 1px solid #f2ede2;
+            font-size: 0.88rem;
+            vertical-align: middle;
+        }
+
+        /* ================= BADGES DE STATUT ================= */
+        .badge-miam {
+            font-weight: 600;
+            font-size: 0.73rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 50rem;
+            display: inline-block;
+        }
+
+        .badge-prep    { background-color: #d8ccb2; color: #3d3522; }
+        .badge-livree  { background-color: #d8f3dc; color: #1b4332; }
+        .badge-soumise { background-color: #faedcd; color: #8c5e0b; }
+        .badge-annulee { background-color: #f8d7da; color: #842029; }
+        .badge-obtenue { background-color: #d8f3dc; color: #1b4332; }
+        .badge-attente { background-color: #faedcd; color: #8c5e0b; }
+
+        /* ================= PILLS DE FILTRE ================= */
+        .filter-pill {
+            border-radius: 50rem;
+            padding: 0.35rem 1.15rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            text-decoration: none;
+            border: 1px solid #333;
+            color: #111;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .filter-pill.active,
+        .filter-pill:hover { background: #000; color: #fff; border-color: #000; }
+
+        /* ================= FORMULAIRES ================= */
+        .form-control-miam, .form-select-miam {
+            border: 1px solid #dedad0;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            padding: 0.65rem 0.9rem;
+        }
+
+        .form-control-miam:focus, .form-select-miam:focus {
+            border-color: var(--miam-gold);
+            box-shadow: none;
+        }
+
+        /* ================= BANDEAU COOKIES ================= */
+        .cookie-banner {
+            background-color: #000;
+            color: #d1d1d1;
+            padding: 1.1rem 0;
+            font-size: 0.85rem;
+        }
+
+        /* ================= FOOTER ================= */
+        .footer-miam {
+            background-color: var(--miam-footer);
+            color: #8c857b;
+            font-size: 0.8rem;
+            padding: 1.5rem 0;
+            margin-top: auto;
+        }
     </style>
 
-    {{-- Les vues peuvent ajouter leur propre CSS avec @push('styles') ... @endpush --}}
+    {{-- CSS spécifique à chaque page --}}
     @stack('styles')
 </head>
 <body>
 
-    {{-- ====================== 1. BARRE DE NAVIGATION ====================== --}}
-    <nav class="navbar navbar-expand-lg mm-navbar">
+    {{-- ====================== NAVBAR ====================== --}}
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-miam sticky-top">
         <div class="container">
-            {{-- Logo : renvoie vers l'accueil --}}
-            <a class="navbar-brand" href="{{ route('etudiant.accueil') }}">
-                Mon <span>Miam Miam</span>
+            <a class="navbar-brand d-flex align-items-center" href="{{ route('etudiant.accueil') }}">
+                <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
+                     style="width: 42px; height: 42px; border: 1px solid var(--miam-gold); color: var(--miam-gold);">
+                    <i class="bi bi-shop"></i>
+                </div>
+                <div>
+                    <div class="font-serif fw-semibold text-white lh-1" style="font-size: 1.2rem;">ZeDuc@Space</div>
+                    <div class="text-uppercase" style="font-size: 0.6rem; letter-spacing: 2px; color: var(--miam-gold);">Mon Miam Miam</div>
+                </div>
             </a>
 
-            {{-- Bouton "burger" visible sur mobile uniquement --}}
-            <button class="navbar-toggler border-0" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#menuEtudiant"
-                    aria-controls="menuEtudiant" aria-expanded="false" aria-label="Menu">
-                <i class="bi bi-list text-white fs-2"></i>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMiam">
+                <span class="navbar-toggler-icon"></span>
             </button>
 
-            <div class="collapse navbar-collapse" id="menuEtudiant">
-                {{--
-                    routeIs('etudiant.accueil') est vrai quand on est sur cette page :
-                    on ajoute alors la classe "active" (soulignement or).
-                    Les noms de routes viennent de routes/web.php (prefix "etudiant.").
-                --}}
-                <ul class="navbar-nav mx-auto">
+            <div class="collapse navbar-collapse justify-content-center" id="navbarMiam">
+                <ul class="navbar-nav mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('etudiant.accueil') ? 'active' : '' }}"
-                           href="{{ route('etudiant.accueil') }}">Accueil</a>
+                        <a class="nav-link {{ request()->routeIs('etudiant.menu.*') ? 'active' : '' }}"
+                           href="{{ route('etudiant.menu.index') }}">Commander</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('etudiant.commander') ? 'active' : '' }}"
-                           href="{{ route('etudiant.commander') }}">Commander</a>
+                        <a class="nav-link {{ request()->routeIs('etudiant.loyalty.*') ? 'active' : '' }}"
+                           href="{{ route('etudiant.loyalty.index') }}">Fidélité et parrainage</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('etudiant.fidelite') ? 'active' : '' }}"
-                           href="{{ route('etudiant.fidelite') }}">Fidélité et parrainage</a>
+                        <a class="nav-link {{ request()->routeIs('etudiant.reclamations.*') ? 'active' : '' }}"
+                           href="{{ route('etudiant.reclamations.index') }}">Historique</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('etudiant.historique') ? 'active' : '' }}"
-                           href="{{ route('etudiant.historique') }}">Historique</a>
+                        <a class="nav-link" href="{{ route('etudiant.accueil') }}#promotions">Jeux et événements</a>
                     </li>
                 </ul>
+            </div>
 
-                {{-- Pill or à droite : prénom + points, avec menu déroulant "Déconnexion" --}}
-                <div class="dropdown">
-                    <button class="btn btn-gold btn-sm rounded-pill px-3 dropdown-toggle"
-                            type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-circle me-1"></i>
-                        {{ auth()->user()->first_name }}
-                        {{-- ?-> : si le compte de points n'existe pas, on affiche 0 au lieu de planter --}}
-                        · {{ auth()->user()->loyaltyAccount?->balance_points ?? 0 }} pts
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a class="dropdown-item" href="{{ route('etudiant.fidelite') }}">
-                                <i class="bi bi-star me-2"></i>Mes points
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            {{-- La déconnexion est un POST (protégé par @csrf), pas un simple lien --}}
-                            <form action="{{ route('logout') }}" method="POST" class="mb-0">
-                                @csrf
-                                <button type="submit" class="dropdown-item text-danger">
-                                    <i class="bi bi-box-arrow-right me-2"></i>Déconnexion
-                                </button>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
+            <div class="d-none d-lg-flex align-items-center">
+                <a href="{{ route('etudiant.loyalty.index') }}" class="badge-user">
+                    {{ $user->first_name }} {{ strtoupper(substr($user->last_name, 0, 1)) }}. &middot; {{ $balance }} pts
+                </a>
             </div>
         </div>
     </nav>
 
-    {{-- ====================== 2. CONTENU PRINCIPAL ====================== --}}
-    <main class="container py-4">
-
-        {{-- Message de succès (->with('success', ...) dans les controllers) --}}
+    {{-- ====================== MESSAGES FLASH ====================== --}}
+    <main>
         @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+            <div class="container mt-3">
+                <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> {{ session('success') }}
+                    @if(session('show_cart_link'))
+                        <a href="{{ route('etudiant.cart.index') }}" class="fw-bold text-success ms-2">Voir mon panier</a>
+                    @endif
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
             </div>
         @endif
 
-        {{-- Message d'erreur général (->with('error', ...)) --}}
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-circle me-2"></i>{{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        @if(session('error') || $errors->any())
+            <div class="container mt-3">
+                <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ session('error') ?? $errors->first() }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
             </div>
         @endif
 
-        {{-- Erreur "restaurant fermé" (clé "hours" ajoutée par StoreOrderRequest) --}}
-        @error('hours')
-            <div class="alert alert-warning">
-                <i class="bi bi-clock me-2"></i>{{ $message }}
-            </div>
-        @enderror
-
-        {{-- C'est ici que s'insère le contenu de chaque page (accueil, commander...) --}}
+        {{-- Contenu de chaque page --}}
         @yield('content')
     </main>
 
-    {{-- ====================== 3. PIED DE PAGE ====================== --}}
-    {{-- Marge en bas (pb-5) pour que le bandeau cookies ne cache pas le texte --}}
-    <footer class="mm-footer py-3 {{ session('cookie_consent_answered') ? '' : 'pb-5' }}">
-        <div class="container d-flex flex-column flex-md-row justify-content-between gap-1">
-            <span>© {{ date('Y') }} Mon Miam Miam. Tous droits réservés.</span>
-            <span>Restaurant universitaire · Commandes en ligne</span>
+    {{-- ====================== FOOTER ====================== --}}
+    <footer class="footer-miam">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <div>&copy; 2026 ZeDuc@Space &mdash; Mon Miam Miam</div>
+            <div>Fait avec soin pour les étudiants de l'Institut Ucac-Icam</div>
         </div>
     </footer>
 
-    {{-- ====================== 4. BANDEAU COOKIES ====================== --}}
-    {{-- Affiché seulement tant que l'étudiant n'a pas répondu (clé posée par CookieController) --}}
+    {{-- ====================== BANDEAU COOKIES ====================== --}}
     @unless(session('cookie_consent_answered'))
-        <div class="cookie-banner py-3">
-            <div class="container d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
-                <span>Nous utilisons des cookies pour améliorer votre expérience et mémoriser vos préférences.</span>
+        <div class="cookie-banner">
+            <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <div>
+                    Nous utilisons des cookies pour améliorer ton expérience et mesurer l'audience. Tu peux accepter ou refuser leur utilisation.
+                </div>
                 <div class="d-flex gap-2">
-                    {{-- Deux petits formulaires POST : consented=0 (refuser) ou consented=1 (accepter) --}}
-                    <form action="{{ route('cookies.store') }}" method="POST" class="mb-0">
+                    <form action="{{ route('cookies.store') }}" method="POST">
                         @csrf
                         <input type="hidden" name="consented" value="0">
-                        <button type="submit" class="btn btn-outline-light btn-sm px-3">Refuser</button>
+                        <button type="submit" class="btn btn-outline-gold rounded-pill px-4 py-1">Refuser</button>
                     </form>
-                    <form action="{{ route('cookies.store') }}" method="POST" class="mb-0">
+                    <form action="{{ route('cookies.store') }}" method="POST">
                         @csrf
                         <input type="hidden" name="consented" value="1">
-                        <button type="submit" class="btn btn-gold btn-sm px-3">Accepter</button>
+                        <button type="submit" class="btn btn-gold rounded-pill px-4 py-1">Accepter</button>
                     </form>
                 </div>
             </div>
         </div>
     @endunless
 
-    {{-- Bootstrap JS (menu burger, menu déroulant, alertes fermables) --}}
     <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
-
-    {{-- Les vues peuvent ajouter leur JavaScript avec @push('scripts') ... @endpush --}}
     @stack('scripts')
 </body>
 </html>
