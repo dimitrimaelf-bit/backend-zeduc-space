@@ -1,63 +1,22 @@
-@extends('layouts.admin')
+@extends('layouts.mmm')
 
-@section('title', 'Ajouter un Employé - Mon Miam Miam')
+@section('titre', 'Ajouter un membre du personnel')
 
-@section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold text-dark mb-0">Créer un compte Employé</h3>
-    <a href="{{ route('admin.employees.index') }}" class="btn btn-outline-secondary">
-        <i class="fa-solid fa-arrow-left me-1"></i> Retour à la liste
-    </a>
-</div>
-
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-4">
-        <form action="{{ route('admin.employees.store') }}" method="POST">
+@section('contenu')
+<div class="container-fluid px-0">
+    <div class="mb-4"><h1 class="h3 fw-bold">Ajouter un membre du personnel</h1><p class="text-muted">Créer un compte employé ou gérant.</p></div>
+    <div class="bg-white border rounded-2 p-4">
+        <form method="POST" action="{{ route('admin.employees.store') }}">
             @csrf
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="name" class="form-label fw-semibold">Nom complet <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name') }}" required>
-                    @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label for="email" class="form-label fw-semibold">Adresse Email <span class="text-danger">*</span></label>
-                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" required>
-                    @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
+            <div class="row g-3">
+                <div class="col-md-6"><label for="first_name" class="form-label">Prénom</label><input id="first_name" name="first_name" value="{{ old('first_name') }}" class="form-control @error('first_name') is-invalid @enderror" required>@error('first_name')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                <div class="col-md-6"><label for="last_name" class="form-label">Nom</label><input id="last_name" name="last_name" value="{{ old('last_name') }}" class="form-control @error('last_name') is-invalid @enderror" required>@error('last_name')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                <div class="col-md-6"><label for="email" class="form-label">Adresse courriel</label><input id="email" type="email" name="email" value="{{ old('email') }}" class="form-control @error('email') is-invalid @enderror" required>@error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                <div class="col-md-6"><label for="phone" class="form-label">Téléphone</label><input id="phone" name="phone" value="{{ old('phone') }}" class="form-control @error('phone') is-invalid @enderror">@error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                <div class="col-md-6"><label for="role_code" class="form-label">Rôle</label><select id="role_code" name="role_code" class="form-select" required><option value="employee" @selected(old('role_code', $role->code) === 'employee')>Employé</option><option value="gerant" @selected(in_array(old('role_code', $role->code), ['gerant', 'manager'], true))>Gérant</option></select></div>
+                <div class="col-md-6"><label for="password" class="form-label">Mot de passe provisoire</label><input id="password" type="password" name="password" class="form-control @error('password') is-invalid @enderror" required>@error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
             </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="phone" class="form-label fw-semibold">Téléphone</label>
-                    <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" value="{{ old('phone') }}">
-                    @error('phone') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label for="role" class="form-label fw-semibold">Rôle / Poste <span class="text-danger">*</span></label>
-                    <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required>
-                        <option value="caissier" {{ old('role') == 'caissier' ? 'selected' : '' }}>Caissier</option>
-                        <option value="cuisinier" {{ old('role') == 'cuisinier' ? 'selected' : '' }}>Cuisinier</option>
-                        <option value="livreur" {{ old('role') == 'livreur' ? 'selected' : '' }}>Livreur</option>
-                        <option value="gestionnaire" {{ old('role') == 'gestionnaire' ? 'selected' : '' }}>Gestionnaire</option>
-                    </select>
-                    @error('role') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <label for="password" class="form-label fw-semibold">Mot de passe provisoire <span class="text-danger">*</span></label>
-                <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" required>
-                @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
-            </div>
-
-            <div class="d-flex justify-content-end gap-2">
-                <a href="{{ route('admin.employees.index') }}" class="btn btn-light">Annuler</a>
-                <button type="submit" class="btn btn-brand"><i class="fa-solid fa-floppy-disk me-1"></i> Enregistrer</button>
-            </div>
+            <div class="d-flex justify-content-end gap-2 mt-4"><a href="{{ route('admin.employees.index', ['role' => $role->code]) }}" class="btn btn-outline-secondary">Annuler</a><button class="btn btn-dark" type="submit">Créer le compte</button></div>
         </form>
     </div>
 </div>

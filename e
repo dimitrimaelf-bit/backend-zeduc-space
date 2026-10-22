@@ -1,0 +1,14 @@
+app/Http/Controllers/Auth/LoginController.php
+app/Http/Controllers/Gerant/ClaimReviewController.php
+app/Http/Controllers/Gerant/EmployeeAccountController.php
+app/Http/Controllers/Gerant/OrderSupervisionController.php
+app/Http/Controllers/Gerant/StatisticsController.php
+app/Http/Middleware/EnsureRole.php
+app/Http/Requests/StoreUserRequest.php
+bootstrap/app.php
+database/seeders/RolesAndSettingsSeeder.php
+routes/web.php
+tests/Feature/GerantClaimReviewTest.php
+tests/Feature/GerantEmployeeAccountTest.php
+tests/Feature/GerantOrderSupervisionTest.php
+tests/Feature/GerantStatisticsTest.php

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Etudiant;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\AppSetting;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
@@ -35,8 +37,10 @@ class OrderController extends Controller
             $subtotal += $item['price_fcfa'] * $item['quantity'];
         }
 
+        $fcfaPerPoint = max(1, (int) AppSetting::where('setting_key', 'loyalty_fcfa_per_point')->value('setting_value'));
+
         // Utilisation de DB::transaction pour s'assurer que tout s'enregistre, ou rien du tout en cas d'erreur
-        DB::transaction(function () use ($cart, $request, $subtotal) {
+        DB::transaction(function () use ($cart, $request, $subtotal, $fcfaPerPoint) {
             $user = Auth::user();
 
             // 1. Création de l'entête de la commande
@@ -48,6 +52,14 @@ class OrderController extends Controller
                 'subtotal_fcfa' => $subtotal,
                 'total_fcfa' => $subtotal, // Le calcul de la réduction par points viendra s'ajouter ici plus tard
                 'status' => 'pending'
+            ]);
+
+            Payment::create([
+                'order_id' => $order->id,
+                'provider' => 'manual_cash',
+                'method' => 'cash',
+                'status' => 'pending',
+                'amount_fcfa' => $order->total_fcfa,
             ]);
 
             // 2. Figer les articles et leurs prix dans l'historique
@@ -62,8 +74,8 @@ class OrderController extends Controller
                 ]);
             }
 
-            // 3. Calcul automatique des points de fidélité gagnés (1 point pour 1000 FCFA)
-            $pointsEarned = floor($subtotal / 1000);
+            // Store the expected points on the order; a payment-confirmation flow must award them to the account.
+            $pointsEarned = (int) floor($subtotal / $fcfaPerPoint);
             if ($pointsEarned > 0) {
                 $order->update(['loyalty_points_earned' => $pointsEarned]);
             }

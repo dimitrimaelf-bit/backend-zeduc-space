@@ -66,7 +66,7 @@
                 <div class="mb-3">
                     <label for="phone" class="form-label small text-dark fw-bold">Numéro de Téléphone</label>
                     <input id="phone" name="phone" type="tel" placeholder="6 59 90 12 87"
-                        class="form-control rounded-1 border-1 shadow-none py-2" value="{{ old('phone') }}">
+                        class="form-control rounded-1 border-1 shadow-none py-2 ">
                     @error('phone')
                         <div class="text-danger small mt-1">{{ $message }}</div>
                     @enderror
@@ -74,9 +74,9 @@
 
                 <!-- Address -->
                 <div class="mb-3">
-                    <label for="delivery_address" class="form-label small text-dark fw-bold">Adresse</label>
-                    <input id="delivery_address" name="delivery_address" type="text"
-                        class="form-control rounded-1 border-1 shadow-none py-2" value="{{ old('delivery_address') }}">
+                    <label for="delivery_address" class="form-label small text-dark fw-bold">Adresse de livraison</label>
+                    <input id="delivery_address" name="delivery_address" type="text" value="{{ old('delivery_address') }}"
+                        class="form-control rounded-1 border-1 shadow-none py-2">
                     @error('delivery_address')
                         <div class="text-danger small mt-1">{{ $message }}</div>
                     @enderror
@@ -85,11 +85,9 @@
                 <!-- Code parrain -->
                 <div class="mb-4">
                     <label for="referral_code" class="form-label small text-dark fw-bold">Code d'un parrain</label>
-                    <input id="referral_code" name="referral_code" type="text" placeholder="(facultatif)"
-                        class="form-control rounded-1 border-1 shadow-none py-2" value="{{ old('referral_code') }}">
-                    @error('referral_code')
-                        <div class="text-danger small mt-1">{{ $message }}</div>
-                    @enderror
+                    <input id="referral_code" name="referral_code" type="text" value="{{ old('referral_code') }}" placeholder="(facultatif)"
+                        class="form-control rounded-1 border-1 shadow-none py-2">
+                    @error('referral_code')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                 </div>
                  
                 <!-- Bouton S'inscrire -->

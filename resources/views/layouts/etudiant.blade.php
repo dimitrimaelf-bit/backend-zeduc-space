@@ -300,12 +300,12 @@
                     Nous utilisons des cookies pour améliorer ton expérience et mesurer l'audience. Tu peux accepter ou refuser leur utilisation.
                 </div>
                 <div class="d-flex gap-2">
-                    <form action="{{ route('cookies.store') }}" method="POST">
+                    <form action="{{ route('cookies.consent') }}" method="POST">
                         @csrf
                         <input type="hidden" name="consented" value="0">
                         <button type="submit" class="btn btn-outline-gold rounded-pill px-4 py-1">Refuser</button>
                     </form>
-                    <form action="{{ route('cookies.store') }}" method="POST">
+                    <form action="{{ route('cookies.consent') }}" method="POST">
                         @csrf
                         <input type="hidden" name="consented" value="1">
                         <button type="submit" class="btn btn-gold rounded-pill px-4 py-1">Accepter</button>

@@ -1,46 +1,44 @@
-@extends('layouts.admin')
+@extends('layouts.mmm')
 
-@section('title', 'Paramètres Généraux - Mon Miam Miam')
+@section('titre', 'Configuration générale - ZeDuc@Space')
 
-@section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold text-dark mb-0">Paramètres Généraux de l'Application</h3>
-</div>
+@section('contenu')
+@php
+    $settingValue = fn ($key, $fallback) => trim($settings->get($key)?->setting_value ?? $fallback);
+@endphp
+<div class="container-fluid px-0">
+    <div class="mb-4"><h1 class="h3 fw-bold mb-1">Configuration générale</h1><p class="text-muted">Horaires du restaurant et règles du programme de fidélité.</p></div>
+    @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
 
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-4">
-        <form action="{{ route('admin.settings.update') }}" method="POST">
-            @csrf
-            @method('PUT')
+    <h2 class="h5 fw-bold mb-3">Restaurant & horaires</h2>
+    <div class="row g-3 mb-4">
+        @foreach(['restaurant_open' => ['Heure d’ouverture', '08:00'], 'restaurant_close' => ['Heure de fermeture', '22:00']] as $key => [$label, $fallback])
+            <div class="col-md-6"><form method="POST" action="{{ route('admin.settings.update', $key) }}" class="bg-white border rounded-2 p-3">@csrf @method('PUT')<label for="{{ $key }}" class="form-label">{{ $label }}</label><div class="input-group"><input id="{{ $key }}" type="time" name="setting_value" value="{{ old('setting_value', $settingValue($key, $fallback)) }}" class="form-control @error('setting_value') is-invalid @enderror" required><button class="btn btn-dark" type="submit">Enregistrer</button></div>@error('setting_value')<div class="text-danger small mt-1">{{ $message }}</div>@enderror</form></div>
+        @endforeach
+    </div>
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="site_name" class="form-label fw-semibold">Nom de l'Etablissement</label>
-                    <input type="text" class="form-control" id="site_name" name="site_name" value="{{ old('site_name', $settings['site_name'] ?? 'Mon Miam Miam') }}" required>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="contact_phone" class="form-label fw-semibold">Téléphone de Contact</label>
-                    <input type="text" class="form-control" id="contact_phone" name="contact_phone" value="{{ old('contact_phone', $settings['contact_phone'] ?? '') }}">
-                </div>
-            </div>
+    <h2 class="h5 fw-bold mb-3">Fidélité & parrainage</h2>
+    <div class="row g-3">
+        @foreach([
+            'loyalty_fcfa_per_point' => ['Dépense pour gagner un point', '1000', 'FCFA'],
+            'loyalty_points_per_1000_fcfa_discount' => ['Points requis pour une remise', '15', 'points'],
+            'loyalty_discount_fcfa' => ['Montant de la remise', '1000', 'FCFA'],
+            'loyalty_points_expiry_months' => ['Durée de validité des points', '12', 'mois'],
+        ] as $key => [$label, $fallback, $unit])
+            <div class="col-md-6"><form method="POST" action="{{ route('admin.settings.update', $key) }}" class="bg-white border rounded-2 p-3">@csrf @method('PUT')<label for="{{ $key }}" class="form-label">{{ $label }}</label><div class="input-group"><input id="{{ $key }}" type="number" min="1" step="1" name="setting_value" value="{{ old('setting_value', $settingValue($key, $fallback)) }}" class="form-control @error('setting_value') is-invalid @enderror" required><span class="input-group-text">{{ $unit }}</span><button class="btn btn-dark" type="submit">Enregistrer</button></div>@error('setting_value')<div class="text-danger small mt-1">{{ $message }}</div>@enderror</form></div>
+        @endforeach
+    </div>
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="delivery_fee" class="form-label fw-semibold">Frais de Livraison Standard (FCFA)</label>
-                    <input type="number" class="form-control" id="delivery_fee" name="delivery_fee" value="{{ old('delivery_fee', $settings['delivery_fee'] ?? 500) }}">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="opening_hours" class="form-label fw-semibold">Horaires d'ouverture</label>
-                    <input type="text" class="form-control" id="opening_hours" name="opening_hours" value="{{ old('opening_hours', $settings['opening_hours'] ?? '08h00 - 20h00') }}">
-                </div>
-            </div>
-
-            <div class="d-flex justify-content-end mt-3">
-                <button type="submit" class="btn btn-brand">
-                    <i class="fa-solid fa-floppy-disk me-1"></i> Sauvegarder les Paramètres
-                </button>
-            </div>
-        </form>
+    <h2 class="h5 fw-bold mt-5 mb-3">Confidentialité & légal</h2>
+    <p class="text-muted small">Ces liens et cette version sont utilisés pour tracer le consentement aux cookies.</p>
+    <div class="row g-3">
+        @foreach([
+            'privacy_policy_url' => ['Lien vers la politique de confidentialité', '', 'url', false],
+            'terms_of_service_url' => ['Lien vers les conditions de service', '', 'url', false],
+            'cookie_policy_version' => ['Version de la politique cookies', '1.0', 'text', true],
+        ] as $key => [$label, $fallback, $type, $required])
+            <div class="col-md-6"><form method="POST" action="{{ route('admin.settings.update', $key) }}" class="bg-white border rounded-2 p-3">@csrf @method('PUT')<label for="{{ $key }}" class="form-label">{{ $label }}</label><div class="input-group"><input id="{{ $key }}" type="{{ $type }}" name="setting_value" value="{{ old('setting_value', $settingValue($key, $fallback)) }}" class="form-control @error('setting_value') is-invalid @enderror" @if($required) required @endif><button class="btn btn-dark" type="submit">Enregistrer</button></div>@error('setting_value')<div class="text-danger small mt-1">{{ $message }}</div>@enderror</form></div>
+        @endforeach
     </div>
 </div>
 @endsection

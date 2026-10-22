@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreUserRequest;
 use App\Models\User;
 use App\Models\Role;
-use App\Models\Referral;
 use App\Models\ReferralCode;
-use App\Http\Requests\StoreUserRequest;
-use Illuminate\Support\Facades\DB;
+use App\Models\Referral;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class RegisterController extends Controller
 {
@@ -20,42 +21,45 @@ class RegisterController extends Controller
         return view('auth.register');
     }
 
-    // Reçoit les données validées, crée l'utilisateur et son parrainage éventuel.
+    // Reçoit les données validées, crée l'utilisateur
+    // et redirige vers l'accueil étudiant
     public function store(StoreUserRequest $request)
     {
-        $data = $request->validated();
+        $validated = $request->validated();
+        $studentRole = Role::whereIn('code', ['student', 'etudiant'])->firstOrFail();
+        $referralCode = null;
 
-        // On utilise une transaction car le traitement de l'inscription et du parrainage doit être atomique : soit tout réussit, soit rien n'est enregistré.
-        $user = DB::transaction(function () use ($data) {
-            $studentRole = Role::where('code', 'student')->firstOrFail();
+        if (!empty($validated['referral_code'])) {
+            $referralCode = ReferralCode::where('code', $validated['referral_code'])
+                ->where('is_active', true)
+                ->first();
 
-            $referralCode = isset($data['referral_code'])
-                ? ReferralCode::where('code', $data['referral_code'])
-                    ->where('is_active', true)
-                    ->firstOrFail()
-                : null;
+            if (!$referralCode) {
+                throw ValidationException::withMessages([
+                    'referral_code' => 'Ce code de parrainage est invalide.',
+                ]);
+            }
+        }
 
-            // 1. Création de l'utilisateur
+        // Transaction : soit tout réussit, soit rien n'est enregistré
+        $user = DB::transaction(function () use ($validated, $studentRole, $referralCode) {
             $user = User::create([
-                'role_id'          => $studentRole->id,
-                'first_name'       => $data['first_name'],
-                'last_name'        => $data['last_name'],
-                'email'            => $data['email'],
-                'phone'            => $data['phone'] ?? null,
-                'password'         => $data['password'],
-                'delivery_address' => $data['delivery_address'] ?? null,
+                ...$validated,
+                'role_id'   => $studentRole->id,
+                'is_active' => true,
             ]);
 
-            // 2. Si l'utilisateur s'est inscrit avec un code parrain, enregistrer le parrainage
+            // Enregistrer le parrainage si un code a été utilisé
             if ($referralCode) {
                 Referral::create([
                     'referrer_user_id' => $referralCode->user_id,
                     'referred_user_id' => $user->id,
                     'code_id'          => $referralCode->id,
+                    'status'           => 'pending',
                 ]);
             }
 
-            // 3. Génération du propre code de parrainage du nouvel utilisateur
+            // Code de parrainage propre au nouvel utilisateur
             ReferralCode::create([
                 'user_id'   => $user->id,
                 'code'      => $this->generateUniqueReferralCode(),
@@ -70,9 +74,7 @@ class RegisterController extends Controller
         return redirect()->route('etudiant.accueil');
     }
 
-    /**
-     * Génère un code de parrainage unique composé de chiffres et lettres majuscules (ex: 8B3X9K1Z)
-     */
+    // Génère un code de parrainage unique (ex : 8B3X9K1Z)
     private function generateUniqueReferralCode(): string
     {
         do {

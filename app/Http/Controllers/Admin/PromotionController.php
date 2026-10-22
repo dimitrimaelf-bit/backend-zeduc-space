@@ -1,69 +1,89 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
+
 use App\Http\Controllers\Controller;
 use App\Models\Promotion;
+use App\Models\Event;
+use App\Support\PublicImage;
 use Illuminate\Http\Request;
 
-class PromotionController extends Controller// ContrOleur gerant les offres et affiches promotionnelles
+class PromotionController extends Controller
 {
-     public function index() //Affiche la liste des promotions dans la vue Blade. Affichage des promotions existantes
-   {
-$promotions = Promotion::orderBy('created_at', 'desc')->get(); //Recuperation de la liste triee par la date de creation la plus recente
-    return view('admin.promotions.index', compact('promotions')); // Envoi des donnees a la vue Blade dediee
-    }
-        public function create()//Formulaire de creation d'une promotion : Methode affichant le formulaire de creation
-     {
-        return view('admin.promotions.create'); // Renvoie de la vue Blade de creation
+    public function index()
+    {
+        $promotions = Promotion::latest('created_at')->paginate(15);
+        $activePromotionCount = Promotion::where('is_active', true)->count();
+        $currentlyRunningPromotionCount = Promotion::where('is_active', true)
+            ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+            ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
+            ->count();
+        $events = Event::latest()->paginate(10, ['*'], 'events_page');
+
+        return view('admin.promotions.index', compact('promotions', 'activePromotionCount', 'currentlyRunningPromotionCount', 'events'));
     }
 
-    public function store(Request $request)//Enregistre la promotion et redirige : Sauvegarde d'une nouvelle promotion
+    public function create()
     {
-        $validated = $request->validate([// Validation des regles pour une offre promotionnelle
-           'title'       => 'required|string|max:150', // Titre de la promotion obligatoire
-            'description' => 'nullable|string',// Description detaillee optionnelle
-            'image_url'   => 'nullable|url|max:500',// URL de l'affiche publicitaire
-            'starts_at'   => 'nullable|date',// Date de debut d'affichage
-            'ends_at'     => 'nullable|date|after_or_equal:starts_at', // Date de fin devant etre posterieure ou egale a la date de debut
-            'is_active'   => 'boolean',  // Statut actif
+        return view('admin.promotions.create');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:150'],
+            'description' => ['nullable', 'string'],
+            'image_url' => ['nullable', 'url', 'max:500'],
+            'image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'starts_at' => ['nullable', 'date'],
+            'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
+        $validated['is_active'] = $request->boolean('is_active');
+        if ($request->hasFile('image_file')) {
+            $validated['image_url'] = PublicImage::store($request->file('image_file'), 'promotions');
+        }
+        unset($validated['image_file']);
 
-        
-        $validated['is_active'] = $request->has('is_active');// Affectation du statut actif selon la case a cocher
-         Promotion::create($validated); // Creation de la promotion en base de donnees
-        return redirect()->route('admin.promotions.index') // Redirection vers l'index des promotions
-            ->with('success', 'La promotion a ete enregistree.');
+        Promotion::create($validated);
+
+        return redirect()->route('admin.promotions.index')->with('success', 'La promotion a été créée.');
     }
-   
-    public function edit($id) // Formulaire d'eedition de la promotion : Methode de preparation de l'edition
+
+    public function edit(Promotion $promotion)
     {
-        $promotion = Promotion::findOrFail($id);// Recherche de la promotion ciblee
-        return view('admin.promotions.edit', compact('promotion')); // Rendu du formulaire de modification avec les donnees
+        return view('admin.promotions.edit', compact('promotion'));
     }
-       
-    public function update(Request $request, $id) //Met a jour une promotion.Sauvegarde des donnees modifiees
+
+    public function update(Request $request, Promotion $promotion)
     {
-        $promotion = Promotion::findOrFail($id);// Recuperation de l'enregistrement a mettre a jour
-        $validated = $request->validate([// Validation des champs modifies
-            
-            'title'       => 'required|string|max:150',// Titre requis
-            'description' => 'nullable|string',// Description
-            'image_url'   => 'nullable|url|max:500', // URL d'image validee
-            'starts_at'   => 'nullable|date',// Date de debut
-            'ends_at'     => 'nullable|date|after_or_equal:starts_at',// Date de fin coherente
-            'is_active'   => 'boolean', // Case a cocher actif/inactif
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:150'],
+            'description' => ['nullable', 'string'],
+            'image_url' => ['nullable', 'url', 'max:500'],
+            'image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'starts_at' => ['nullable', 'date'],
+            'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
+        $validated['is_active'] = $request->boolean('is_active');
+        if ($request->hasFile('image_file')) {
+            $newImageUrl = PublicImage::store($request->file('image_file'), 'promotions');
+            PublicImage::delete($promotion->image_url, 'promotions');
+            $validated['image_url'] = $newImageUrl;
+        }
+        unset($validated['image_file']);
 
-        $validated['is_active'] = $request->has('is_active');// Mise a jour de la valeur booleenne d'activation
-        $promotion->update($validated); // Application de la mise a jour
-        return redirect()->route('admin.promotions.index')  // Redirection avec confirmation
-            ->with('success', 'La promotion a ete mise a jour.');
+        $promotion->update($validated);
+
+        return redirect()->route('admin.promotions.index')->with('success', 'La promotion a été mise à jour.');
     }
 
-    public function destroy($id)//Supprime une promotion/une offre
+    public function destroy(Promotion $promotion)
     {
-        $promotion = Promotion::findOrFail($id);// Recherche de la promotion par ID
-        $promotion->delete(); // Suppression de la base de donnees
-        return redirect()->route('admin.promotions.index')// Redirection vers la liste des promotions
-            ->with('success', 'La promotion a été supprimée.');
+        PublicImage::delete($promotion->image_url, 'promotions');
+        $promotion->delete();
+
+        return redirect()->route('admin.promotions.index')->with('success', 'La promotion a été supprimée.');
     }
 }

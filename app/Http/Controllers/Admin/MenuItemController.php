@@ -11,11 +11,18 @@ class MenuItemController extends Controller
     {
         $query = MenuItem::with('category');// Preparation de la requete avec prechargement de la relation category (evite le probleme SQL N+1)
         if ($request->filled('category_id')) { // Filtrage dynamique si une categorie specifique est selectionnee
-            
             $query->where('category_id', $request->category_id); // Ajout du filtre par ID de categorie
         }
 
-       $items = $query->orderBy('created_at', 'desc')->get();  // Execution de la requete de tri par date
+        if ($request->filled('search')) {
+            $search = $request->string('search')->trim()->toString();
+            $query->where(function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $items = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
         $categories = MenuCategory::where('is_active', true)->get(); // Recuperation de toutes les categories actives pour alimenter un filtre de recherche
         return view('admin.menu.index', compact('items', 'categories')); // Transmission des elements et categories e la vue Blade
     }
@@ -43,6 +50,7 @@ class MenuItemController extends Controller
 
         // Conversion de la case du plat du jour en booleen
         $validated['is_daily_special'] = $request->has('is_daily_special');
+        $validated['description'] = $validated['description'] ?? '';
         
         if ($validated['is_daily_special']) {   // Regle metier : S'il s'agit du plat du jour, desactiver l'ancien plat du jour unique
         MenuItem::where('is_daily_special', true)->update(['is_daily_special' => false]); // Remise e zero de tous les autres plats du jour
@@ -79,6 +87,7 @@ class MenuItemController extends Controller
 
         $validated['is_available'] = $request->has('is_available'); // Gestion du statut disponible via la checkbox
         $validated['is_daily_special'] = $request->has('is_daily_special'); // Gestion du statut du plat du jour via la checkbox
+        $validated['description'] = $validated['description'] ?? '';
         if ($validated['is_daily_special']) { // Si coche comme plat du jour, decocher tous les autres plats sauf celui-ci 
             MenuItem::where('id', '<>', $id)->update(['is_daily_special' => false]); // Mise a jour de la table pour reinitialiser les autres plats
         }

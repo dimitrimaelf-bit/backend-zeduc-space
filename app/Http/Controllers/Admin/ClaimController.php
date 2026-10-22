@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Claim;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ClaimController extends Controller
 {
@@ -21,7 +22,19 @@ class ClaimController extends Controller
             $query->where('status', $request->status);
         }
 
-        $claims = $query->orderBy('created_at', 'desc')->get();
+        if ($request->filled('search')) {
+            $search = $request->string('search')->trim()->toString();
+            $query->where(function ($query) use ($search) {
+                $query->where('subject', 'like', "%{$search}%")
+                    ->orWhereHas('user', fn ($userQuery) => $userQuery
+                        ->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%"))
+                    ->orWhereHas('order', fn ($orderQuery) => $orderQuery
+                        ->where('order_number', 'like', "%{$search}%"));
+            });
+        }
+
+        $claims = $query->latest()->paginate(15)->withQueryString();
 
         return view('admin.claims.index', compact('claims'));
     }
@@ -50,13 +63,13 @@ class ClaimController extends Controller
 
         $validated = $request->validate([
             'status'   => 'required|in:open,in_progress,resolved,rejected',
-            'response' => 'required|string',
+            'response' => 'nullable|string|max:5000',
         ]);
 
         $claim->update([
             'status'     => $validated['status'],
-            'response'   => $validated['response'],
-            'handled_by' => auth()->id,
+            'response'   => $validated['response'] ?? null,
+            'handled_by' => Auth::id(),
         ]);
 
         return redirect()->route('admin.claims.index')
