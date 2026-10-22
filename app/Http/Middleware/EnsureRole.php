@@ -14,7 +14,14 @@ class EnsureRole
         $user = $request->user();
 
         abort_if(! $user || ! $user->is_active, 403, 'Compte désactivé.');
-        abort_unless(in_array($user->role?->code, $roles, true), 403, "Vous n'avez pas accès à cette page.");
+
+        $hasRequiredRole = collect($roles)->contains(
+            fn (string $role) => is_numeric($role)
+                ? (int) $user->role_id === (int) $role
+                : $user->role?->code === $role
+        );
+
+        abort_unless($hasRequiredRole, 403, "Vous n'avez pas accès à cette page.");
 
         return $next($request);
     }
