@@ -41,11 +41,12 @@ class MenuController extends Controller
 
         // 3. Récupérer le menu classé par catégories (uniquement les articles disponibles)
         $categories = MenuCategory::with(['items' => function ($query) {
-                $query->where('is_available', true);
-            }])
-            ->where('is_active', true)
-            ->orderBy('sort_order', 'asc')
-            ->get();
+        $query->where('is_available', true);
+       }])
+        ->where('is_active', true)
+        ->where('name', '!=', 'Plats Principaux') // <-- On exclut "Plats Principaux" d'ici
+        ->orderBy('sort_order', 'asc')
+        ->get();
 
         return view('etudiant.menu.index', compact('promotions', 'dailySpecials', 'categories', 'user', 'balance', 'cart'));
     }

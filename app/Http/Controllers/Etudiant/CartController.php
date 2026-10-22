@@ -14,10 +14,14 @@ class CartController extends Controller
      */
     public function index()
     {
-        $cart = Session::get('cart', []);
+        $cart = \Illuminate\Support\Facades\Session::get('cart', []);
         $total = $this->calculateTotal($cart);
+        
+        $user = auth()->user();
+        // On récupère le solde, ou 0 si le compte fidélité n'existe pas encore
+        $balance = $user ? (int) \App\Models\LoyaltyAccount::whereKey($user->id)->value('balance_points') : 0;
 
-        return view('etudiant.cart.index', compact('cart', 'total'));
+        return view('etudiant.cart.index', compact('cart', 'total', 'balance'));
     }
 
     /**

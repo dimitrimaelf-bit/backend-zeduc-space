@@ -423,8 +423,8 @@
 
     <!-- ================= CASE À COCHER : UTILISER MES POINTS ================= -->
     @php
-        $canUsePoints = $balance >= 15;
-        $missingPoints = max(0, 15 - $balance);
+        $canUsePoints = $balance >= 5;
+        $missingPoints = max(0, 5 - $balance);
         $subtotal = 0;
         foreach ($cart as $cItem) {
             $subtotal += $cItem['price_fcfa'] * $cItem['quantity'];
@@ -438,7 +438,7 @@
                {{ !$canUsePoints ? 'disabled' : '' }}
                onchange="toggleLoyaltyDiscount(this.checked)">
         <label class="form-check-label small text-muted" for="useLoyaltyPointsCheckbox">
-            Utiliser mes points (15 pts = 1 000 F)
+            Utiliser mes points (5 pts = 1 000 F)
             @if(!$canUsePoints)
                 <br><span style="color: #9e8a60; font-size: 0.78rem;">Seuil non atteint : il te manque {{ $missingPoints }} points.</span>
             @endif

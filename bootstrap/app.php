@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
         ]);
+        // Autorise CinetPay à renvoyer les données en POST sans erreur 419 (CSRF)
+        $middleware->validateCsrfTokens(except: [
+            'paiement/notify',
+            'paiement/retour',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

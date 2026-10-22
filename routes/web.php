@@ -13,6 +13,7 @@ use App\Http\Controllers\Etudiant\ReclamationController;
 use App\Http\Controllers\Etudiant\AccueilController;
 use App\Http\Controllers\CookieController;
 use App\Http\Controllers\Etudiant\ParrainageController;
+use App\Http\Controllers\Etudiant\PaiementController;
 
 
 use App\Http\Controllers\Admin\EmployeeController;
@@ -42,14 +43,31 @@ Route::middleware('guest')->group(function () {
 // routes accessibles uniquement quand on est connecté
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    Route::post('/dashboard', fn () => view('dashboard'))->name('dashboard');
+    Route::get('/dashboard', function () {
+    $user = auth()->user();
+    
+    // Si c'est un étudiant, on l'envoie sur l'accueil étudiant
+    if ($user->role && $user->role->code === 'student') {
+        return redirect()->route('etudiant.accueil');
+    }
+    
+    // Si c'est un admin, on l'envoie sur le tableau de bord admin
+    if ($user->role && $user->role->code === 'admin') {
+        return redirect()->route('admin.dashboard');
+    }
+
+    // Par défaut (si autre rôle), on peut le renvoyer vers l'accueil étudiant pour l'instant
+    return redirect()->route('etudiant.accueil');
+})->name('dashboard');
 });
 
 // ESPACE ÉTUDIANT 
 
 // Enregistrement du consentement des cookies
     Route::post('/cookies', [CookieController::class, 'store'])->name('cookies.store');
-
+// Routes de retour CinetPay (GET et POST car CinetPay renvoie parfois en POST sur le return_url)
+    Route::match(['get', 'post'], '/paiement/retour', [PaiementController::class,     'retourPaiement'])->name('cinetpay.return');
+    Route::post('/paiement/notify', [PaiementController::class, 'notify'])->name('cinetpay.notify');
 
 Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(function () {
 

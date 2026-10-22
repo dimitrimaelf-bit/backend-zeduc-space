@@ -279,10 +279,10 @@
                     <div class="small mb-1" style="color: var(--miam-gold);">Mes points de fidélité</div>
                     <div class="font-serif display-5 text-white mb-2">{{ $balance }} pts</div>
                     @php
-                        $pointsManquants = max(0, 15 - ($balance % 15));
+                        $pointsManquants = max(0, 5 - ($balance % 5));
                     @endphp
                     <p class="small text-secondary mb-3" style="line-height: 1.4;">
-                        15 points = 1 000 F de réduction.
+                        5 points = 1 000 F de réduction.
                         @if($balance >= 15)
                             Tu peux déjà bénéficier d'une réduction !
                         @else

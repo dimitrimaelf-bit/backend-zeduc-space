@@ -267,7 +267,7 @@
     <p class="text-muted small mb-4">Gagne des points à chaque commande et invite tes camarades.</p>
 
     @php
-        $targetPoints = 15;
+        $targetPoints = 5;
         $pointsRemaining = max(0, $targetPoints - ($balance % $targetPoints));
         if ($balance >= $targetPoints && $balance % $targetPoints === 0) {
             $pointsRemaining = 0;
@@ -293,7 +293,7 @@
                 </div>
 
                 <p class="text-muted small mb-4">
-                    @if($balance >= 15)
+                    @if($balance >= 5)
                         Tu as assez de points pour obtenir 1 000 F de réduction ! 1 000 F dépensés = 1 point.
                     @else
                         Plus que {{ $pointsRemaining }} points avant ta prochaine réduction de 1 000 F. 1 000 F dépensés = 1 point.
@@ -301,7 +301,7 @@
                 </p>
 
                 <div class="mb-5">
-                    @if($balance >= 15)
+                    @if($balance >= 5)
                         <a href="{{ route('etudiant.menu.index') }}" class="btn-use-points active-points text-decoration-none d-inline-block">
                             Utiliser mes points
                         </a>
