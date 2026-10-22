@@ -24,10 +24,10 @@ class OrderController extends Controller
             return redirect()->route('etudiant.cart.index')->with('error', 'Votre panier est vide.');
         }
 
-        // Validation du choix de l'étudiant (Livraison ou sur place)
         $request->validate([
             'service_mode' => 'required|in:delivery,on_site',
             'delivery_address' => 'required_if:service_mode,delivery'
+            'payment_method'   => 'required|in:mobile_money,cash',
         ]);
 
         $subtotal = 0;
@@ -35,22 +35,59 @@ class OrderController extends Controller
             $subtotal += $item['price_fcfa'] * $item['quantity'];
         }
 
-        // Utilisation de DB::transaction pour s'assurer que tout s'enregistre, ou rien du tout en cas d'erreur
         DB::transaction(function () use ($cart, $request, $subtotal) {
             $user = Auth::user();
 
-            // 1. Création de l'entête de la commande
+            // 1. Récupération du compte de fidélité
+            $loyaltyAccount = \App\Models\LoyaltyAccount::firstOrCreate(
+                ['user_id' => $user->id],
+                ['balance_points' => 0]
+            );
+
+            // 2. Gestion de la réduction (5 points = 1000 FCFA de réduction)
+            $discount_fcfa = 0;
+            $pointsUsed = 0;
+
+            // On vérifie si l'étudiant a coché la case ET s'il a au moins 5 points
+            if ($request->has('use_points') && $loyaltyAccount->balance_points >= 5) {
+                // On calcule combien de blocs de 5 points il possède
+                $blocsDe5 = floor($loyaltyAccount->balance_points / 5);
+                $discount_fcfa = $blocsDe5 * 1000;
+                
+                // Si la réduction dépasse le prix de la commande, on ajuste
+                if ($discount_fcfa > $subtotal) {
+                    $discount_fcfa = $subtotal;
+                    $pointsUsed = ceil($subtotal / 1000) * 5; 
+                } else {
+                    $pointsUsed = $blocsDe5 * 5;
+                }
+
+                // On déduit les points utilisés de son compte
+                $loyaltyAccount->decrement('balance_points', $pointsUsed);
+            }
+
+            // Calcul du total final à payer après déduction
+            $total_fcfa = $subtotal - $discount_fcfa;
+
+            // 3. Gain de points : +1 point pour avoir passé la commande
+            $pointsEarned = 1;
+            $loyaltyAccount->increment('balance_points', $pointsEarned);
+
+            // 4. Création de l'entête de la commande
             $order = Order::create([
                 'order_number' => 'CMD-' . strtoupper(Str::random(6)),
                 'user_id' => $user->id,
                 'service_mode' => $request->service_mode,
                 'delivery_address' => $request->service_mode === 'delivery' ? $request->delivery_address : null,
                 'subtotal_fcfa' => $subtotal,
-                'total_fcfa' => $subtotal, // Le calcul de la réduction par points viendra s'ajouter ici plus tard
+                'discount_fcfa' => $discount_fcfa,
+                'total_fcfa' => $total_fcfa,
+                'loyalty_points_used' => $pointsUsed,
+                'loyalty_points_earned' => $pointsEarned, // Enregistrement du point gagné
                 'status' => 'pending'
             ]);
 
-            // 2. Figer les articles et leurs prix dans l'historique
+            // 5. Enregistrement des plats
             foreach ($cart as $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -62,16 +99,46 @@ class OrderController extends Controller
                 ]);
             }
 
-            // 3. Calcul automatique des points de fidélité gagnés (1 point pour 1000 FCFA)
-            $pointsEarned = floor($subtotal / 1000);
-            if ($pointsEarned > 0) {
-                $order->update(['loyalty_points_earned' => $pointsEarned]);
+            // 6. Historique : Trace de l'utilisation des points
+            if ($pointsUsed > 0) {
+                \App\Models\LoyaltyTransaction::create([
+                    'user_id' => $user->id,
+                    'order_id' => $order->id,
+                    'type' => 'redeem',
+                    'points' => -$pointsUsed,
+                    'description' => "Réduction de {$discount_fcfa} FCFA sur la commande {$order->order_number}",
+                ]);
             }
+
+            // 7. Historique : Trace du gain du point
+            \App\Models\LoyaltyTransaction::create([
+                'user_id' => $user->id,
+                'order_id' => $order->id,
+                'type' => 'earn',
+                'points' => $pointsEarned,
+                'description' => "Point de fidélité gagné pour la commande {$order->order_number}",
+            ]);
+          return $order;
         });
 
-        // 4. On vide le panier une fois la commande enregistrée
         Session::forget('cart');
 
-        return redirect()->route('etudiant.menu.index')->with('success', 'Votre commande a été envoyée en cuisine !');
+        // Si l'étudiant a choisi OM / MoMo, on lance CinetPay
+        if ($request->payment_method === 'mobile_money') {
+            return PaiementController::initierCinetPay($order, Auth::user());
+        }
+
+        // Sinon (paiement en espèces / cash), on enregistre un paiement cash en attente
+        \App\Models\Payment::create([
+            'order_id'    => $order->id,
+            'provider'    => 'local',
+            'method'      => 'cash',
+            'status'      => 'pending',
+            'amount_fcfa' => $order->total_fcfa,
+        ]);
+
+        return redirect()->route('etudiant.menu.index')
+            ->with('success', 'Votre commande a été envoyée en cuisine avec succès !');
+        
     }
 }

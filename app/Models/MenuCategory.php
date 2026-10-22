@@ -19,4 +19,9 @@ class MenuCategory extends Model
     {
         return $this->hasMany(MenuItem::class, 'category_id');
     }
+    public function menuItems()
+{
+    // Indique qu'une catégorie possède plusieurs plats (MenuItem)
+    return $this->hasMany(MenuItem::class, 'category_id');
+}
 }

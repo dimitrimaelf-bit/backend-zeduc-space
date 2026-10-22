@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
  * @extends Factory<User>
@@ -13,33 +13,32 @@ use Illuminate\Support\Str;
 class UserFactory extends Factory
 {
     /**
-     * The current password being used by the factory.
+     * Le mot de passe actuel utilisé par la factory.
      */
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
+     * Définit l'état par défaut du modèle (adapté à la migration users).
      *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
-        return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
-        ];
-    }
+        // Récupère ou crée le rôle étudiant par défaut pour éviter les erreurs de clé étrangère
+        $role = Role::firstOrCreate(
+            ['code' => 'student'],
+            ['label' => 'Etudiant']
+        );
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        return [
+            'role_id'          => $role->id,
+            'first_name'       => fake()->firstName(),
+            'last_name'        => fake()->lastName(),
+            'email'            => fake()->unique()->safeEmail(),
+            'phone'            => fake()->phoneNumber(),
+            'password'         => static::$password ??= Hash::make('password'),
+            'delivery_address' => fake()->address(),
+            'is_active'        => true,
+        ];
     }
 }

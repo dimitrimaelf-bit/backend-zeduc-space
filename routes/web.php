@@ -10,6 +10,11 @@ use App\Http\Controllers\Etudiant\CartController;
 use App\Http\Controllers\Etudiant\OrderController;
 use App\Http\Controllers\Etudiant\LoyaltyController;
 use App\Http\Controllers\Etudiant\ReclamationController;
+use App\Http\Controllers\Etudiant\AccueilController;
+use App\Http\Controllers\CookieController;
+use App\Http\Controllers\Etudiant\ParrainageController;
+use App\Http\Controllers\Etudiant\PaiementController;
+
 
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\MenuCategoryController;
@@ -20,6 +25,7 @@ use App\Http\Controllers\Admin\AppSettingController;
 use App\Http\Controllers\Admin\DashboardController;
 
 // routes accessibles uniquement quand on est pas connecté
+
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store']);
@@ -37,12 +43,37 @@ Route::middleware('guest')->group(function () {
 // routes accessibles uniquement quand on est connecté
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    Route::post('/dashboard', fn () => view('dashboard'))->name('dashboard');
+    Route::get('/dashboard', function () {
+    $user = auth()->user();
+    
+    // Si c'est un étudiant, on l'envoie sur l'accueil étudiant
+    if ($user->role && $user->role->code === 'student') {
+        return redirect()->route('etudiant.accueil');
+    }
+    
+    // Si c'est un admin, on l'envoie sur le tableau de bord admin
+    if ($user->role && $user->role->code === 'admin') {
+        return redirect()->route('admin.dashboard');
+    }
+
+    // Par défaut (si autre rôle), on peut le renvoyer vers l'accueil étudiant pour l'instant
+    return redirect()->route('etudiant.accueil');
+})->name('dashboard');
 });
 
 // ESPACE ÉTUDIANT 
 
+// Enregistrement du consentement des cookies
+    Route::post('/cookies', [CookieController::class, 'store'])->name('cookies.store');
+// Routes de retour CinetPay (GET et POST car CinetPay renvoie parfois en POST sur le return_url)
+    Route::match(['get', 'post'], '/paiement/retour', [PaiementController::class,     'retourPaiement'])->name('cinetpay.return');
+    Route::post('/paiement/notify', [PaiementController::class, 'notify'])->name('cinetpay.notify');
+
 Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(function () {
+
+    // Page d'accueil avec le Top 10 et les points
+    Route::get('/accueil', [AccueilController::class, 'index'])->name('accueil');
+
     
     // Affichage du Menu
     Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
@@ -62,7 +93,10 @@ Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(functi
     Route::get('/reclamations', [ReclamationController::class, 'index'])->name('reclamations.index');
     Route::get('/reclamations/nouveau', [ReclamationController::class, 'create'])->name('reclamations.create');
     Route::post('/reclamations/nouveau', [ReclamationController::class, 'store'])->name('reclamations.store');
-
+        // --- PARRAINAGE ---
+    // --- PARRAINAGE ---
+    Route::post('/parrainage/generer', [ParrainageController::class, 'generer'])->name('parrainage.generer');
+    Route::post('/parrainage/utiliser', [ParrainageController::class, 'utiliser'])->name('parrainage.utiliser');
 });
 
 // ROUTES ADMINISTRATION (SECURISEES PAR MIDDLEWARE )

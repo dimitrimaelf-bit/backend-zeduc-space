@@ -16,7 +16,7 @@ class AccueilController extends Controller
         $user = $request->user();
 
         // Solde de points affiché dans le bandeau ("12 pts")
-        $balance = (int) LoyaltyAccount::whereKey($user->id)->value('balance_points');
+        $balance = $user ? (int) LoyaltyAccount::whereKey($user->id)->value('balance_points') : 0;
 
         // Menu du jour : 4 plats disponibles marqués "plat du jour"
         $dailySpecials = MenuItem::where('is_available', true)
@@ -52,7 +52,13 @@ class AccueilController extends Controller
                     $q->where('created_at', '>=', $depuis);
                 }
             }])
-            ->having('commandes_terminees', '>', 0)
+            // Remplacement de having() par whereHas() pour la compatibilité avec SQLite en test
+            ->whereHas('orders', function ($q) use ($depuis) {
+                $q->where('status', 'completed');
+                if ($depuis) {
+                    $q->where('created_at', '>=', $depuis);
+                }
+            })
             ->orderByDesc('commandes_terminees')
             ->orderBy('first_name')               // départage les ex-aequo
             ->limit(10)

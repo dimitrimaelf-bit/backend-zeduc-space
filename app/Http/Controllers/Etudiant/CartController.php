@@ -14,10 +14,14 @@ class CartController extends Controller
      */
     public function index()
     {
-        $cart = Session::get('cart', []);
+        $cart = \Illuminate\Support\Facades\Session::get('cart', []);
         $total = $this->calculateTotal($cart);
+        
+        $user = auth()->user();
+        // On récupère le solde, ou 0 si le compte fidélité n'existe pas encore
+        $balance = $user ? (int) \App\Models\LoyaltyAccount::whereKey($user->id)->value('balance_points') : 0;
 
-        return view('etudiant.cart.index', compact('cart', 'total'));
+        return view('etudiant.cart.index', compact('cart', 'total', 'balance'));
     }
 
     /**
@@ -64,12 +68,20 @@ class CartController extends Controller
     {
         $cart = Session::get('cart', []);
         
-        if (isset($cart[$request->item_id])) {
-            unset($cart[$request->item_id]);
+        $itemId = $request->input('item_id') ?? $request->input('menu_item_id');
+
+        if (isset($cart[$itemId])) {
+            // Si la quantité est supérieure à 1, on décrémente
+            if ($cart[$itemId]['quantity'] > 1) {
+                $cart[$itemId]['quantity']--;
+            } else {
+                // Sinon, on supprime uniquement cet article du panier
+                unset($cart[$itemId]);
+            }
             Session::put('cart', $cart);
         }
 
-        return back()->with('success', 'Plat retiré du panier.');
+        return back()->with('success', 'Panier mis à jour.');
     }
 
     /**

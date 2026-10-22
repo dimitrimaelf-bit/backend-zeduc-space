@@ -11,6 +11,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolesAndSettingsSeeder::class,
+            MassDataSeeder::class,
+            OrderSeeder::class,
         ]);
     }
 }
