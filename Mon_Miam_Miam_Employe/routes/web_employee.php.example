@@ -1,0 +1,24 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Employee\DashboardController;
+use App\Http\Controllers\Employee\OrderController;
+use App\Http\Controllers\Employee\MenuController;
+use App\Http\Controllers\Employee\ReclamationController;
+use App\Http\Controllers\Employee\StatController;
+
+/* À fusionner dans routes/web.php de votre application Laravel.
+   Les routes nécessitent une authentification et un compte ayant le rôle employé.
+   Adaptez le middleware role:employee à celui configuré dans votre projet. */
+Route::middleware(['auth', 'role:employee'])->prefix('employe')->name('employe.')->group(function () {
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/commandes', [OrderController::class, 'index'])->name('commandes.index');
+    Route::get('/commandes/{commande}', [OrderController::class, 'show'])->name('commandes.show');
+    Route::patch('/commandes/{commande}', [OrderController::class, 'update'])->name('commandes.update');
+    Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
+    Route::patch('/menu/{plat}', [MenuController::class, 'update'])->name('menu.update');
+    Route::get('/reclamations', [ReclamationController::class, 'index'])->name('reclamations.index');
+    Route::get('/reclamations/{reclamation}', [ReclamationController::class, 'show'])->name('reclamations.show');
+    Route::patch('/reclamations/{reclamation}', [ReclamationController::class, 'update'])->name('reclamations.update');
+    Route::get('/statistiques', [StatController::class, 'index'])->name('statistiques');
+});
