@@ -1,3 +1,5 @@
+<!-- Header de l'authentification -->
+
 <header class="auth-header">
     <div class="container d-flex align-items-center justify-content-between py-2">
         <a href="{{ url('/') }}" class="d-flex align-items-center gap-3 text-decoration-none">
