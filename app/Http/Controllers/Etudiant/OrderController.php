@@ -24,12 +24,11 @@ class OrderController extends Controller
             return redirect()->route('etudiant.cart.index')->with('error', 'Votre panier est vide.');
         }
 
-        $request->validate([
+            $request->validate([
             'service_mode' => 'required|in:delivery,on_site',
-            'delivery_address' => 'required_if:service_mode,delivery'
+            'delivery_address' => 'required_if:service_mode,delivery',
             'payment_method'   => 'required|in:mobile_money,cash',
         ]);
-
         $subtotal = 0;
         foreach ($cart as $item) {
             $subtotal += $item['price_fcfa'] * $item['quantity'];
