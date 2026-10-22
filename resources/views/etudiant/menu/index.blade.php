@@ -390,36 +390,7 @@
         @endif
     @endforeach
 
-    <!-- ================= SECTION : PROMOTIONS ================= -->
-    <div id="section-promotions" class="mb-4">
-        <h3 class="font-serif-italic mb-3" style="font-size: 1.45rem;">Promotions</h3>
-
-        @forelse($promotions as $promo)
-            <div class="menu-row d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-3">
-                    @if($promo->image_url)
-                        <img src="{{ asset($promo->image_url) }}" alt="{{ $promo->title }}" class="menu-thumb">
-                    @else
-                        <div class="menu-icon-circle">
-                            <i class="bi bi-stars"></i>
-                        </div>
-                    @endif
-                    <div>
-                        <div class="font-serif-italic fw-medium" style="font-size: 1.1rem;">{{ $promo->title }}</div>
-                        <div class="text-muted small">{{ $promo->description }}</div>
-                    </div>
-                </div>
-
-                <div class="d-flex align-items-center gap-3">
-                    <button type="button" class="qty-btn-minus" disabled>&minus;</button>
-                    <span class="fw-semibold small" style="min-width: 14px; text-align: center;">0</span>
-                    <button type="button" class="qty-btn-plus" disabled>+</button>
-                </div>
-            </div>
-        @empty
-            <p class="text-muted small">Aucune promotion active aujourd'hui.</p>
-        @endforelse
-    </div>
+   
 
     <!-- ================= CASE À COCHER : UTILISER MES POINTS ================= -->
     @php
