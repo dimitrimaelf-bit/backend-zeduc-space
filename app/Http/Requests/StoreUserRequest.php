@@ -26,3 +26,4 @@ class StoreUserRequest extends FormRequest
         ];
     }
 }
+

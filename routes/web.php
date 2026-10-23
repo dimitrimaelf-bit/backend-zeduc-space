@@ -26,6 +26,11 @@ use App\Http\Controllers\Admin\LoyaltyController as AdminLoyaltyController;
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\PaymentController;
 
+use App\Http\Controllers\Gerant\ClaimReviewController;
+use App\Http\Controllers\Gerant\EmployeeAccountController;
+use App\Http\Controllers\Gerant\OrderSupervisionController;
+use App\Http\Controllers\Gerant\StatisticsController;
+
 use App\Http\Controllers\Employee as Emp;
 
 // PAGE D'ACCUEIL PUBLIQUE
@@ -123,4 +128,26 @@ Route::middleware(['auth', 'role:employee'])->prefix('employe')->name('employe.'
     Route::get('/reclamations/{reclamation}', [Emp\ReclamationController::class, 'show'])->name('reclamations.show');
     Route::patch('/reclamations/{reclamation}', [Emp\ReclamationController::class, 'update'])->name('reclamations.update');
     Route::get('/statistiques', [Emp\StatController::class, 'index'])->name('statistiques');
+});
+
+// 6. ESPACE GÉRANT (role_id = 3)
+Route::middleware(['auth', 'role:3'])->group(function () {
+    Route::prefix('gerant')->name('gerant.')->group(function () {
+        Route::get('/commandes', [OrderSupervisionController::class, 'index'])->name('orders.index');
+        Route::patch('/commandes/{order}/status', [OrderSupervisionController::class, 'updateStatus'])->name('orders.status.update');
+        Route::get('/employes', [EmployeeAccountController::class, 'index'])->name('employees.index');
+        Route::post('/employes', [EmployeeAccountController::class, 'store'])->name('employees.store');
+        Route::get('/statistiques', [StatisticsController::class, 'index'])->name('statistics.index');
+        Route::get('/reclamations', [ClaimReviewController::class, 'index'])->name('claims.index');
+        Route::patch('/reclamations/{claim}/review', [ClaimReviewController::class, 'review'])->name('claims.review');
+    });
+
+    // Anciennes URL, redirigées vers les nouvelles
+    Route::get('/Gerant/Supervision/', fn () => redirect()->route('gerant.orders.index'))->name('gerant.legacy.supervision');
+    Route::get('/Gerant/Supervision/Orderspending', fn () => redirect()->route('gerant.orders.index', ['status' => 'preparing']))->name('gerant.legacy.orders.pending');
+    Route::get('/Gerant/Supervision/Ordersready', fn () => redirect()->route('gerant.orders.index', ['status' => 'ready']))->name('gerant.legacy.orders.ready');
+    Route::get('/Gerant/Supervision/Ordersdelivered', fn () => redirect()->route('gerant.orders.index', ['status' => 'delivered']))->name('gerant.legacy.orders.delivered');
+    Route::get('/Gerant/Claims', fn () => redirect()->route('gerant.claims.index'))->name('gerant.legacy.claims');
+    Route::get('/Gerant/Employeeaccounts', fn () => redirect()->route('gerant.employees.index'))->name('gerant.legacy.employees');
+    Route::get('/Gerant/Stats', fn () => redirect()->route('gerant.statistics.index'))->name('gerant.legacy.statistics');
 });

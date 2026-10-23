@@ -4,22 +4,35 @@ namespace Tests\Feature;
 
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyTransaction;
+use App\Models\MenuItem;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Referral;
 use App\Models\ReferralCode;
 use App\Models\Role;
 use App\Models\User;
+use Database\Seeders\RolesAndSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class GerantStatisticsTest extends TestCase
 {
+    // Garantit que chaque test démarre avec une base de données propre.
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(RolesAndSettingsSeeder::class);
+    }
+
+    // Vérifie le calcul et la présentation des indicateurs de vente, fidélité et parrainage.
     public function test_manager_can_view_sales_order_loyalty_and_referral_statistics(): void
     {
+        // Prépare un gérant, un client et une commande payée.
         $manager = $this->userWithRole('manager');
         $customer = $this->userWithRole('student');
         $order = Order::create([
@@ -27,9 +40,26 @@ class GerantStatisticsTest extends TestCase
             'user_id' => $customer->id,
             'service_mode' => 'on_site',
             'status' => 'completed',
+            'discount_fcfa' => 500,
+            'loyalty_points_used' => 10,
             'total_fcfa' => 2500,
         ]);
+        $menuItem = MenuItem::create([
+            'name' => 'Plat de test',
+            'description' => 'Plat ajouté pour les statistiques',
+            'price_fcfa' => 1250,
+            'is_available' => true,
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'menu_item_id' => $menuItem->id,
+            'item_name' => $menuItem->name,
+            'unit_price_fcfa' => $menuItem->price_fcfa,
+            'quantity' => 2,
+            'line_total_fcfa' => 2500,
+        ]);
 
+        // Associe un paiement encaissé à la commande pour alimenter les chiffres de vente.
         Payment::create([
             'order_id' => $order->id,
             'provider' => 'test',
@@ -38,6 +68,7 @@ class GerantStatisticsTest extends TestCase
             'amount_fcfa' => 2500,
         ]);
 
+        // Ajoute un compte et une transaction de fidélité afin de vérifier le solde et les points gagnés.
         LoyaltyAccount::create([
             'user_id' => $customer->id,
             'balance_points' => 12,
@@ -49,50 +80,75 @@ class GerantStatisticsTest extends TestCase
             'points' => 12,
             'description' => 'Points gagnés sur une commande',
         ]);
+        LoyaltyTransaction::create([
+            'user_id' => $customer->id,
+            'order_id' => $order->id,
+            'type' => 'redeem',
+            'points' => -10,
+            'description' => 'Points utilisés',
+        ]);
 
+        // Prépare un code de parrainage actif et un parrainage récompensé.
         $referralCode = ReferralCode::create([
             'user_id' => $customer->id,
             'code' => 'REF-STAT-1',
             'is_active' => true,
         ]);
+        $referredUser = $this->userWithRole('student2');
         Referral::create([
             'referrer_user_id' => $customer->id,
-            'referred_user_id' => $this->userWithRole('student2')->id,
+            'referred_user_id' => $referredUser->id,
             'code_id' => $referralCode->id,
             'status' => 'rewarded',
         ]);
+        foreach ([1, 2] as $number) {
+            Order::create([
+                'order_number' => 'ORDER-REF-'.$number,
+                'user_id' => $referredUser->id,
+                'service_mode' => 'delivery',
+                'status' => 'completed',
+            ]);
+        }
 
+        // Contrôle les indicateurs calculés pour chaque domaine statistique.
         $this->actingAs($manager)
-            ->getJson(route('gerant.statistics.index'))
+            ->get(route('gerant.statistics.index'))
             ->assertOk()
-            ->assertJsonPath('sales.paid_total_fcfa', 2500)
-            ->assertJsonPath('sales.paid_transactions', 1)
-            ->assertJsonPath('orders.total', 1)
-            ->assertJsonPath('orders.by_status.completed', 1)
-            ->assertJsonPath('loyalty.accounts', 1)
-            ->assertJsonPath('loyalty.balance_points_total', 12)
-            ->assertJsonPath('loyalty.by_type.earn.points_total', 12)
-            ->assertJsonPath('referrals.active_codes', 1)
-            ->assertJsonPath('referrals.by_status.rewarded', 1)
-            ->assertJsonStructure(['refreshed_at']);
+            ->assertViewIs('Gerant.Stats')
+            ->assertViewHas('sales', fn ($sales) => $sales['paid_total_fcfa'] === 2500 && $sales['paid_transactions'] === 1)
+            ->assertViewHas('orders', fn ($orders) => $orders['total'] === 3 && $orders['by_status']['completed'] === 3)
+            ->assertViewHas('loyalty', fn ($loyalty) => $loyalty['accounts'] === 1 && $loyalty['balance_points_total'] === 12 && $loyalty['by_type']['earn']['points_total'] === 12)
+            ->assertViewHas('referrals', fn ($referrals) => $referrals['active_codes'] === 1 && $referrals['by_status']['rewarded'] === 1)
+            ->assertViewHas('rewards', fn ($rewards) => $rewards['loyalty_redemptions'] === 1
+                && $rewards['discounted_orders'] === 1
+                && $rewards['referral_repeat_purchase_rate'] === 100)
+            ->assertViewHas('channels', fn ($channels) => $channels['on_site']['percentage'] === 33
+                && $channels['delivery']['percentage'] === 67)
+            ->assertViewHas('topPlats', fn ($topPlats) => $topPlats->count() === 1
+                && $topPlats->first()->name === 'Plat de test'
+                && (int) $topPlats->first()->commandes_count === 2);
     }
 
+    // Vérifie que les statistiques ne sont accessibles qu'aux gérants.
     public function test_non_manager_cannot_view_statistics(): void
     {
         $employee = $this->userWithRole('employee');
 
         $this->actingAs($employee)
-            ->getJson(route('gerant.statistics.index'))
+            ->get(route('gerant.statistics.index'))
             ->assertForbidden();
     }
 
+    // Crée un utilisateur de test ayant le rôle demandé.
     private function userWithRole(string $roleCode): User
     {
+        // Ajoute le rôle dans la base s'il n'y est pas encore.
         $role = Role::firstOrCreate(
             ['code' => $roleCode],
             ['label' => ucfirst($roleCode)]
         );
 
+        // Enregistre puis retourne un utilisateur de ce rôle.
         return User::create([
             'role_id' => $role->id,
             'first_name' => ucfirst($roleCode),

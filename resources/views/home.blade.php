@@ -32,21 +32,20 @@
     </nav>
 
     {{-- Section Héro --}}
-    <section class="hero-section text-center text-white">
-        <div class="hero-overlay">
-            <div class="container py-5">
-                <h1 class="display-5 fw-bold mb-3">Quand les étudiants de<br>Yansoki ont faim,<br>ils savent où commander.</h1>
-                <p class="lead mb-4">100+ plats disponibles chaque jour</p>
-                <a href="{{ route('login') }}" class="btn btn-gold btn-lg px-4">Voir le menu du jour</a>
-                <div class="row mt-5">
-                    <div class="col-md-6">
-                        <h3 class="gold fw-bold">150+</h3>
-                        <p class="small">Plats différents chaque semaine</p>
-                    </div>
-                    <div class="col-md-6">
-                        <h3 class="gold fw-bold">1 plat</h3>
-                        <p class="small">Votre repas livré en 15 min</p>
-                    </div>
+    <section class="hero-section text-center text-white position-relative d-flex align-items-center"
+        style="background: linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,.65)), url('{{ asset('images/hero-bg.jpg') }}') center / cover no-repeat; min-height: 80vh;">
+        <div class="container py-5">
+            <h1 class="display-5 fw-bold mb-3">Quand les étudiants de<br>Yansoki ont faim,<br>ils savent où commander.</h1>
+            <p class="lead mb-4">100+ plats disponibles chaque jour</p>
+            <a href="{{ route('login') }}" class="btn btn-gold btn-lg px-4">Voir le menu du jour</a>
+            <div class="row mt-5">
+                <div class="col-6">
+                    <h3 class="gold fw-bold">150+</h3>
+                    <p class="small">Plats différents chaque semaine</p>
+                </div>
+                <div class="col-6">
+                    <h3 class="gold fw-bold">1 plat</h3>
+                    <p class="small">Votre repas livré en 15 min</p>
                 </div>
             </div>
         </div>
@@ -147,7 +146,7 @@
             <div class="row text-secondary small">
                 <div class="col-md-3">
                     <h6 class="gold">ZéDuc-Space</h6>
-                    <p>Restaurant universitaire<br>Campus de Yansoki<br>Yaoundé, Cameroun</p>
+                    <p>Restaurant universitaire<br>Campus de Yansoki<br>Douala, Cameroun</p>
                 </div>
                 <div class="col-md-3">
                     <h6 class="gold">Explorer</h6>
@@ -155,11 +154,11 @@
                 </div>
                 <div class="col-md-3">
                     <h6 class="gold">Horaires</h6>
-                    <p>Lundi - Samedi<br>11h - 22h<br>Dimanche : 12h - 20h</p>
+                    <p>Lundi - Vendredi<br>17h - 22h<br>Samedi - Dimanche :<br> 11h - 20h</p>
                 </div>
                 <div class="col-md-3">
                     <h6 class="gold">Contact</h6>
-                    <p>+237 690 00 00 00<br>contact@zeduc-space.cm<br>Suivez-nous : @zeducspace</p>
+                    <p>+237 696 37 12 77<br>contact@zeduc-space.cm<br>Suivez-nous : @zeducspace</p>
                 </div>
             </div>
             <p class="text-secondary small mt-3">© 2026 ZEDUC-SP@CE - The Climate of Taste & Chill</p>
