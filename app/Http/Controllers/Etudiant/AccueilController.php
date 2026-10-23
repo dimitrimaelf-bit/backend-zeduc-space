@@ -46,15 +46,16 @@ class AccueilController extends Controller
 
         $topClients = User::whereHas('role', fn ($q) => $q->where('code', 'student'))
             // withCount crée la colonne "commandes_terminees" sans charger les commandes
+            // On compte les commandes livrées (delivered) OU terminées (completed)
             ->withCount(['orders as commandes_terminees' => function ($q) use ($depuis) {
-                $q->where('status', 'completed');
+                $q->whereIn('status', ['delivered', 'completed']);
                 if ($depuis) {
                     $q->where('created_at', '>=', $depuis);
                 }
             }])
             // Remplacement de having() par whereHas() pour la compatibilité avec SQLite en test
             ->whereHas('orders', function ($q) use ($depuis) {
-                $q->where('status', 'completed');
+                $q->whereIn('status', ['delivered', 'completed']);
                 if ($depuis) {
                     $q->where('created_at', '>=', $depuis);
                 }
