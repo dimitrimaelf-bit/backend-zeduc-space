@@ -264,7 +264,6 @@ describe('register', function () {
         Role::factory()->student()->create();
         ReferralCode::factory()->inactive()->create(['code' => 'INACTIF1']);
 
-        // Le contrôleur fait firstOrFail() → ModelNotFoundException → 404
         $this->withoutExceptionHandling();
 
         expect(fn () => $this->post(route('register'), [
@@ -274,7 +273,7 @@ describe('register', function () {
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'referral_code' => 'INACTIF1',
-        ]))->toThrow(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+            ]))->toThrow(\Illuminate\Validation\ValidationException::class);
 
         $this->assertDatabaseMissing('users', ['email' => 'filleul@example.com']);
         $this->assertGuest();

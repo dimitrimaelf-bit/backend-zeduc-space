@@ -44,6 +44,12 @@ class SettingControllerTest extends TestCase
     #[Test]
     public function un_admin_peut_modifier_un_parametre_de_fidelite()
     {
+
+        \App\Models\AppSetting::updateOrCreate(
+            ['setting_key' => 'loyalty_fcfa_per_point'],
+            ['setting_value' => '1000']
+        );
+
         $this->actingAs($this->admin)
             ->put(route('admin.settings.update', 'loyalty_fcfa_per_point'), [
                 'setting_value' => '1500',

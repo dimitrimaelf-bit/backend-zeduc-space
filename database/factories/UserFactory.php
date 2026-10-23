@@ -13,11 +13,16 @@ class UserFactory extends Factory
 
     protected static ?string $password;
 
+    // Réutilise le rôle s'il existe déjà, sinon le crée (évite les doublons sur roles.code)
+    private function roleId(string $code, string $label): int
+    {
+        return Role::firstOrCreate(['code' => $code], ['label' => $label])->id;
+    }
+
     public function definition(): array
     {
         return [
-            // Réutilise le rôle étudiant s'il existe déjà, sinon le crée via la factory
-            'role_id' => Role::where('code', 'student')->value('id') ?? Role::factory()->student(),
+            'role_id' => fn () => $this->roleId('student', 'Etudiant'),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'email' => fake()->unique()->safeEmail(),
@@ -35,21 +40,21 @@ class UserFactory extends Factory
 
     public function admin(): static
     {
-        return $this->state(fn () => ['role_id' => Role::factory()->admin()]);
+        return $this->state(fn () => ['role_id' => $this->roleId('admin', 'Administrateur')]);
     }
 
     public function employee(): static
     {
-        return $this->state(fn () => ['role_id' => Role::factory()->employee()]);
+        return $this->state(fn () => ['role_id' => $this->roleId('employee', 'Employé')]);
     }
 
     public function student(): static
     {
-        return $this->state(fn () => ['role_id' => Role::factory()->student()]);
+        return $this->state(fn () => ['role_id' => $this->roleId('student', 'Etudiant')]);
     }
 
     public function manager(): static
     {
-        return $this->state(fn () => ['role_id' => Role::factory()->manager()]);
+        return $this->state(fn () => ['role_id' => $this->roleId('manager', 'Gérant')]);
     }
 }
