@@ -74,7 +74,16 @@
                     <label class="form-check-label" for="use_points">
                         Utiliser mes points (5 pts = 1 000 FCFA de réduction)
                     </label>
-                    <small class="d-block text-success">Tu as {{ $balance }} points disponibles.</small>
+                    @php
+                        $blocsDe5 = floor($balance / 5);
+                        $pointsRestants = $balance % 5;
+                    @endphp
+                    <small class="d-block text-success">
+                        Tu as {{ $balance }} points ({{ $blocsDe5 }} bloc{{ $blocsDe5 > 1 ? 's' : '' }} de 5 disponibles).
+                        @if($pointsRestants > 0)
+                            {{ $pointsRestants }} point{{ $pointsRestants > 1 ? 's' : '' }} restant{{ $pointsRestants > 1 ? 's' : '' }} pour le prochain bloc.
+                        @endif
+                    </small>
                 @else
                     {{-- Si l'étudiant a moins de 5 points, la case est désactivée et affiche les points manquants --}}
                     <input type="checkbox" class="form-check-input" id="use_points" disabled>

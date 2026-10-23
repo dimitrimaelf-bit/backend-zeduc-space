@@ -287,14 +287,20 @@
                     <div class="small mb-1" style="color: var(--miam-gold);">Mes points de fidélité</div>
                     <div class="font-serif display-5 text-white mb-2">{{ $balance }} pts</div>
                     @php
-                        $pointsManquants = max(0, 5 - ($balance % 5));
+                        // Calcul des blocs de 5 points disponibles
+                        $blocsDe5 = floor($balance / 5);
+                        $pointsPourProchainBloc = $balance % 5;
+                        $pointsManquantsPourProchain = max(0, 5 - $pointsPourProchainBloc);
                     @endphp
                     <p class="small text-secondary mb-3" style="line-height: 1.4;">
                         5 points = 1 000 F de réduction.
-                        @if($balance >= 15)
-                            Tu peux déjà bénéficier d'une réduction !
+                        @if($balance >= 5)
+                            Tu as {{ $blocsDe5 }} bloc{{ $blocsDe5 > 1 ? 's' : '' }} de 5 points disponibles.
+                            @if($pointsPourProchainBloc > 0)
+                                Il te manque {{ $pointsManquantsPourProchain }} points pour le prochain bloc.
+                            @endif
                         @else
-                            Il te manque {{ $pointsManquants }} points pour la prochaine.
+                            Il te manque {{ $pointsManquantsPourProchain }} points pour pouvoir utiliser une réduction.
                         @endif
                     </p>
                     <a href="{{ route('etudiant.loyalty.index') }}" class="btn btn-outline-gold rounded-pill">
