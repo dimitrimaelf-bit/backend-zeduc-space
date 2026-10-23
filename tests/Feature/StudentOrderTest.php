@@ -46,7 +46,7 @@ class StudentOrderTest extends TestCase
                 'price_fcfa' => $item->price_fcfa,
                 'quantity' => 1,
             ]]])
-            ->post(route('etudiant.order.store'), ['service_mode' => 'on_site'])
+            ->post(route('etudiant.order.store'), ['service_mode' => 'on_site', 'payment_method' => 'cash'])
             ->assertRedirect(route('etudiant.menu.index'));
 
         $this->assertDatabaseHas('orders', [

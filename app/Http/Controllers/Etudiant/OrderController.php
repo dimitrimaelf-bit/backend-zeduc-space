@@ -36,21 +36,22 @@ class OrderController extends Controller
             $subtotal += $item['price_fcfa'] * $item['quantity'];
         }
 
-        $order = DB::transaction(function () use ($cart, $request, $subtotal) {
+
+        $fcfaPerPoint = (int) AppSetting::where('setting_key', 'loyalty_fcfa_per_point')->value('setting_value') ?: 1000;
+        $order = DB::transaction(function () use ($cart, $request, $subtotal, $fcfaPerPoint) {
             $user = Auth::user();
 
             // 1. Récupération du compte de fidélité
-            $loyaltyAccount = \App\Models\LoyaltyAccount::firstOrCreate(
-                ['user_id' => $user->id],
-                ['balance_points' => 0]
-            );
+            $loyaltyAccount = $request->boolean('use_loyalty_points')
+                ? \App\Models\LoyaltyAccount::where('user_id', $user->id)->first()
+                : null;
 
-            // 2. Gestion de la réduction (5 points = 1000 FCFA de réduction)
             $discount_fcfa = 0;
             $pointsUsed = 0;
 
+            // 2. Gestion de la réduction (5 points = 1000 FCFA de réduction)
             // On vérifie si l'étudiant a coché la case ET s'il a au moins 5 points
-           if ($request->boolean('use_loyalty_points') && $loyaltyAccount->balance_points >= 5) {
+            if ($loyaltyAccount && $request->boolean('use_loyalty_points') && $loyaltyAccount->balance_points >= 5) {
                 // On calcule combien de blocs de 5 points il possède
                 $blocsDe5 = floor($loyaltyAccount->balance_points / 5);
                 $discount_fcfa = $blocsDe5 * 1000;
@@ -84,8 +85,7 @@ class OrderController extends Controller
                 'discount_fcfa' => $discount_fcfa,
                 'total_fcfa' => $total_fcfa,
                 'loyalty_points_used' => $pointsUsed,
-                'loyalty_points_earned' => 0, // Les points seront crédités uniquement lors de la finalisation de la commande
-                'status' => 'pending'
+                'loyalty_points_earned' => (int) floor($subtotal / $fcfaPerPoint), // attribués à la confirmation du paiement 
             ]);
 
             // 5. Enregistrement des plats

@@ -87,15 +87,21 @@ class EtudiantWorkflowTest extends TestCase
 
         $response = $this->actingAs($this->student)->post(route('etudiant.order.store'), [
             'service_mode' => 'on_site',
+            'payment_method' => 'cash',
         ]);
 
         $response->assertRedirect(route('etudiant.menu.index'));
         $this->assertDatabaseHas('orders', [
             'user_id' => $this->student->id,
-            'payment_method' => 'cash',
             'service_mode' => 'on_site',
             'total_fcfa' => 2000,
             'status' => 'pending',
+        ]);
+        
+        $this->assertDatabaseHas('payments', [
+            'method' => 'cash',
+            'status' => 'pending',
+            'amount_fcfa' => 2000,
         ]);
 
         $this->assertFalse(Session::has('cart'));

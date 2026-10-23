@@ -14,7 +14,7 @@ class EnsureRole
         $user = $request->user();
 
         abort_if(! $user, 403, 'Accès non autorisé.');
-        abort_if(! $user->is_active, 403, 'Compte désactivé.');
+        abort_if(isset($user->is_active) && ! $user->is_active, 403, 'Compte désactivé.');
 
         $hasRequiredRole = collect($roles)->contains(
             fn (string $role) => is_numeric($role)
