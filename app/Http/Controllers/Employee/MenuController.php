@@ -10,13 +10,13 @@ class MenuController extends Controller
 {
     public function index()
     {
-        $plats = MenuItem::orderBy('nom')->get();
+        $plats = MenuItem::orderBy('name')->get();
         return view('employe.menu.index', compact('plats'));
     }
 
     public function update(Request $request, MenuItem $plat)
     {
-        $plat->disponible = $request->boolean('disponible');
+        $plat->disponible = $request->boolean('is_available');
         $plat->save();
         return redirect()->route('employe.menu.index')->with('success', 'Disponibilité du plat mise à jour.');
     }

@@ -52,19 +52,20 @@
 
         .text-secondary { color: #b5b5b5 !important; }
 
-        /* Fonds spécifiques aux pages d'authentification */
+        /* Fond des pages d'authentification : l'image est sur un calque séparé,
+        donc l'overlay ne rend pas le formulaire pâle */
         .auth-background {
-            background-image: url('/images/background-miam.jpg'); /* Assurez-vous que l'image existe dans public/images/ */
-            background-size: cover;
-            background-position: center;
+            position: relative;
             min-height: 100vh;
-            opacity: 0.4;
-            z-index: -1;
         }
-        /* Background sombre pour mot de passe oublié */
-        .dark-background {
-            background-color: #0f0f0f;
-            min-height: 100vh;
+        .auth-background::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                linear-gradient(rgba(15, 14, 12, 0.55), rgba(15, 14, 12, 0.55)),
+                url('{{ asset("images/auth-bg.jpg") }}') center / cover no-repeat;
+            z-index: -1;
         }
 
         .gold { color: var(--zeduc-gold) !important; }

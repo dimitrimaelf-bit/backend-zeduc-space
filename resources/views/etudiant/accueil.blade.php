@@ -8,7 +8,7 @@
     .hero-section {
         position: relative;
         background: linear-gradient(rgba(15, 14, 12, 0.72), rgba(15, 14, 12, 0.72)),
-                    url('{{ asset("images/background-miam.jpg") }}') center/cover no-repeat;
+                    url('{{ asset("/images/background-miam.jpg") }}') center/cover no-repeat;
         background-color: #2b2620;
         padding: 4.5rem 0;
         color: #fff;

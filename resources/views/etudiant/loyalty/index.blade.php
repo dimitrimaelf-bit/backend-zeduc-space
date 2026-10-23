@@ -167,7 +167,7 @@
                 {{-- Encadré Code + Bouton Copier --}}
                 <div class="d-flex align-items-center gap-2 mb-3">
                     <div class="referral-box" id="referralCodeText">
-                        {{ $referralCode ? $referralCode->code : 'AUCUN CODE' }}
+                        {{ is_object($referralCode) ? $referralCode->code : ($referralCode ?: 'AUCUN CODE') }}
                     </div>
                     <button type="button" class="btn-copy" onclick="copyReferralCode()">
                         Copier

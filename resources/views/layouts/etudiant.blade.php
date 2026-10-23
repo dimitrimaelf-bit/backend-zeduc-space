@@ -249,10 +249,19 @@
                 </ul>
             </div>
 
-            <div class="d-none d-lg-flex align-items-center">
+            <div class="d-none d-lg-flex align-items-center gap-2">
                 <a href="{{ route('etudiant.loyalty.index') }}" class="badge-user">
                     {{ $user->first_name }} {{ strtoupper(substr($user->last_name, 0, 1)) }}. &middot; {{ $balance }} pts
                 </a>
+                
+                {{-- Bouton de déconnexion --}}
+                <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-gold d-flex align-items-center gap-1" title="Déconnexion">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Déconnexion</span>
+                    </button>
+                </form>
             </div>
         </div>
     </nav>

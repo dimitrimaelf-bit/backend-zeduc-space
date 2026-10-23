@@ -7,15 +7,29 @@ use App\Models\Order;
 use App\Models\Claim;
 
 class DashboardController extends Controller
+
 {
     public function index()
     {
         $today = now()->startOfDay();
-        $commandesEnAttente = Order::whereIn('statut', ['En attente', 'En préparation', 'Prête'])->count();
-        $commandesTerminees = Order::where('statut', 'Terminée')->where('created_at', '>=', $today)->count();
-        $reclamationsOuvertes = Claim::whereIn('statut', ['Ouverte', 'En cours'])->count();
-        $ventesSemaine = Order::where('statut', 'Terminée')->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->sum('montant_total');
+
+        $commandesEnAttente = Order::whereIn('status', ['pending', 'preparing', 'ready'])->count();
+        $commandesTerminees = Order::where('status', 'completed')->where('created_at', '>=', $today)->count();
+        $reclamationsOuvertes = Claim::whereIn('status', ['open', 'in_progress'])->count();
+        
+    
+        $ventesSemaine = Order::where('status', 'completed')
+            ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
+            ->sum('total_fcfa');
+
         $commandesRecentes = Order::with('user')->latest()->take(6)->get();
-        return view('employe.dashboard', compact('commandesEnAttente','commandesTerminees','reclamationsOuvertes','ventesSemaine','commandesRecentes'));
+
+        return view('employe.dashboard', compact(
+            'commandesEnAttente',
+            'commandesTerminees',
+            'reclamationsOuvertes',
+            'ventesSemaine',
+            'commandesRecentes'
+        ));
     }
 }

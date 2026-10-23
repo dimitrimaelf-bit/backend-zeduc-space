@@ -36,7 +36,7 @@ class LoginController extends Controller
     // Redirection selon le code du rôle
     $targetRoute = match ($user->role?->code) {
         'admin'    => 'admin.dashboard',
-        'employee' => 'employee.orders', // ou la route souhaitée pour les employés
+        'employee' => 'dashboard', 
         'student'  => 'etudiant.accueil',
         default    => 'home',
     };
