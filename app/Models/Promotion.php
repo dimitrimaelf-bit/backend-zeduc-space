@@ -10,7 +10,7 @@ class Promotion extends Model
     const UPDATED_AT = null; // Seulement 'created_at'
 
     protected $fillable = [
-        'title', 'description', 'image_url', 
+        'type', 'title', 'description', 'image_url',
         'starts_at', 'ends_at', 'is_active'
     ];
 

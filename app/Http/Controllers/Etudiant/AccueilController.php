@@ -16,7 +16,7 @@ class AccueilController extends Controller
         $user = $request->user();
 
         // Solde de points affiché dans le bandeau ("12 pts")
-        $balance = (int) LoyaltyAccount::whereKey($user->id)->value('balance_points');
+        $balance = $user ? (int) LoyaltyAccount::whereKey($user->id)->value('balance_points') : 0;
 
         // Menu du jour : 4 plats disponibles marqués "plat du jour"
         $dailySpecials = MenuItem::where('is_available', true)
@@ -25,8 +25,8 @@ class AccueilController extends Controller
             ->limit(4)
             ->get();
 
-        // Promotions en cours : actives et dont les dates encadrent aujourd'hui
-        // (une date NULL = pas de limite)
+        // Offres (promotions et événements) actives aujourd'hui
+        // On affiche à la fois les promotions et les événements qui sont en cours aujourd'hui
         $promotions = Promotion::where('is_active', true)
             ->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
             ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
@@ -45,20 +45,21 @@ class AccueilController extends Controller
         };
 
         $topClients = User::whereHas('role', fn ($q) => $q->where('code', 'student'))
-            // Filtre les utilisateurs ayant au moins 1 commande terminée dans la période
-            ->whereHas('orders', function ($q) use ($depuis) {
-                $q->where('status', 'completed');
-                if ($depuis) {
-                    $q->where('created_at', '>=', $depuis);
-                }
-            })
-            // Ajoute le compteur "commandes_terminees" pour l'affichage et le tri
+            // withCount crée la colonne "commandes_terminees" sans charger les commandes
+            // On compte les commandes livrées (delivered) OU terminées (completed)
             ->withCount(['orders as commandes_terminees' => function ($q) use ($depuis) {
-                $q->where('status', 'completed');
+                $q->whereIn('status', ['delivered', 'completed']);
                 if ($depuis) {
                     $q->where('created_at', '>=', $depuis);
                 }
             }])
+            // Remplacement de having() par whereHas() pour la compatibilité avec SQLite en test
+            ->whereHas('orders', function ($q) use ($depuis) {
+                $q->whereIn('status', ['delivered', 'completed']);
+                if ($depuis) {
+                    $q->where('created_at', '>=', $depuis);
+                }
+            })
             ->orderByDesc('commandes_terminees')
             ->orderBy('first_name')               // départage les ex-aequo
             ->limit(10)

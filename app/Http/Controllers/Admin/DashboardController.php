@@ -19,23 +19,12 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Espace Administrateur (role_id = 4)
-        if ($user->role_id == 4) {
-            return $this->adminDashboard($request);
-        }
-
-        // 2. Espace Employé (role_id = 2)
-        if ($user->role_id == 2) {
-            return $this->employeeDashboard();
-        }
-
-        // 3. Espace Gérant (role_id = 3)
-        if ($user->role_id == 3) {
-            return $this->gerantDashboard();
-        }
-
-        // 4. Espace Étudiant (role_id = 1)
-        return redirect()->route('etudiant.accueil');
+        return match ($user->role?->code) {
+            'admin'    => $this->adminDashboard($request),
+            'employee' => redirect()->route('employe.dashboard'),
+            'manager'  => redirect()->route('gerant.orders.index'),
+            default    => redirect()->route('etudiant.accueil'),
+        };
     }
 
     public function stats(Request $request)

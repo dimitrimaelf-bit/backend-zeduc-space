@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
+
 class PromotionControllerTest extends TestCase
 {
     use RefreshDatabase;

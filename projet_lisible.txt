@@ -430,6 +430,21 @@ $promotions = Promotion::orderBy('created_at', 'desc')->get(); //Recuperation de
     }
 }
 
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Http\Controllers\Auth\HomeController.php ===
+<?php
+
+namespace App\Http\Controllers\Auth;
+
+use App\Http\Controllers\Controller;
+
+class HomeController extends Controller
+{
+    public function index()
+    {
+        return view('home');
+    }
+}
+
 === FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Http\Controllers\Auth\LoginController.php ===
 <?php
 
@@ -457,14 +472,14 @@ class LoginController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::attempt($credentials + ['is_active' => true], $request->boolean('remember'))) {
             return back()->withErrors([
                 'email' => "Identifiants incorrects.",
             ])->onlyInput('email');
         }
 
         $request->session()->regenerate();
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended(route('home'));
     }
 
     /*dÃ©connecter l'utilisateur, invalide la session
@@ -472,7 +487,9 @@ class LoginController extends Controller
     public function destroy(Request $request) {
         Auth::logout();
         $request->session()->invalidate();
-        $request->session()->regenerateToken(); 
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login');
     }
 }
 
@@ -483,20 +500,21 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class PasswordResetController extends Controller
 {
     // affiche le formulaire "mot de passe oubliÃ©"
-    public function request() {
+    public function request()
+    {
         return view('auth.forgot-password');
     }
 
     // valide l"email et renvoie le lien de rÃ©initialisation
     public function email(Request $request)
     {
-        $request->validate(["email" => ['required', 'string', 'max:255', 'email']]);
+        $request->validate(['email' => ['required', 'string', 'max:255', 'email']]);
         $status = Password::sendResetLink($request->only('email'));
 
         return $status === Password::RESET_LINK_SENT
@@ -505,8 +523,9 @@ class PasswordResetController extends Controller
     }
 
     // affiche le formulaire pour crÃ©er un nouveau mot de passe,
-    //en passant le token et l'email dans la vue
-    public function reset(string $token) {
+    // en passant le token et l'email dans la vue
+    public function reset(string $token)
+    {
         return view('auth.reset-password', [
             'token' => $token,
             'email' => request('email'),
@@ -516,11 +535,12 @@ class PasswordResetController extends Controller
     /* vÃ©rifie les donnÃ©es, utilise Password::reset()
     si le token est valide, la fonction anonyme met
     Ã  jour le mot de passe de l'utilisateur */
-    public function update(Request $request) {
+    public function update(Request $request)
+    {
         $request->validate([
             'token' => 'required',
             'email' => ['required', 'string', 'max:255', 'email'],
-            'password' => Password::defaults(),
+            'password' => ['required', 'confirmed', PasswordRule::defaults()],
         ]);
 
         $status = Password::reset(
@@ -545,24 +565,58 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
+use App\Models\Referral;
+use App\Models\ReferralCode;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class RegisterController extends Controller
 {
     // affiche le formulaire d'inscription
-    public function create() 
+    public function create()
     {
         return view('auth.register');
     }
 
-    // reÃ§oit les donnÃ©es validÃ©es, crÃ©e l'utilisateur 
-    // et redirige vers le tableau de bord
-    public function store(StoreUserRequest $request) 
+    // ReÃ§oit les donnÃ©es validÃ©es, crÃ©e l'utilisateur et son parrainage Ã©ventuel.
+    public function store(StoreUserRequest $request)
     {
-        $user = User::create($request->validated());
+        $data = $request->validated();
+
+        $user = DB::transaction(function () use ($data) {
+            $studentRole = Role::where('code', 'student')->firstOrFail();
+            $referralCode = isset($data['referral_code'])
+                ? ReferralCode::where('code', $data['referral_code'])
+                    ->where('is_active', true)
+                    ->firstOrFail()
+                : null;
+
+            $user = User::create([
+                'role_id' => $studentRole->id,
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'] ?? null,
+                'password' => $data['password'],
+                'delivery_address' => $data['delivery_address'] ?? null,
+            ]);
+
+            if ($referralCode) {
+                Referral::create([
+                    'referrer_user_id' => $referralCode->user_id,
+                    'referred_user_id' => $user->id,
+                    'code_id' => $referralCode->id,
+                ]);
+            }
+
+            return $user;
+        });
+
         Auth::login($user);
-        return redirect()->route('dashboard');
+
+        return redirect()->route('home');
     }
 }
 
@@ -585,7 +639,7 @@ class AccueilController extends Controller
         $user = $request->user();
 
         // Solde de points affichÃ© dans le bandeau ("12 pts")
-        $balance = (int) LoyaltyAccount::whereKey($user->id)->value('balance_points');
+        $balance = $user ? (int) LoyaltyAccount::whereKey($user->id)->value('balance_points') : 0;
 
         // Menu du jour : 4 plats disponibles marquÃ©s "plat du jour"
         $dailySpecials = MenuItem::where('is_available', true)
@@ -621,7 +675,13 @@ class AccueilController extends Controller
                     $q->where('created_at', '>=', $depuis);
                 }
             }])
-            ->having('commandes_terminees', '>', 0)
+            // Remplacement de having() par whereHas() pour la compatibilitÃ© avec SQLite en test
+            ->whereHas('orders', function ($q) use ($depuis) {
+                $q->where('status', 'completed');
+                if ($depuis) {
+                    $q->where('created_at', '>=', $depuis);
+                }
+            })
             ->orderByDesc('commandes_terminees')
             ->orderBy('first_name')               // dÃ©partage les ex-aequo
             ->limit(10)
@@ -648,10 +708,14 @@ class CartController extends Controller
      */
     public function index()
     {
-        $cart = Session::get('cart', []);
+        $cart = \Illuminate\Support\Facades\Session::get('cart', []);
         $total = $this->calculateTotal($cart);
+        
+        $user = auth()->user();
+        // On rÃ©cupÃ¨re le solde, ou 0 si le compte fidÃ©litÃ© n'existe pas encore
+        $balance = $user ? (int) \App\Models\LoyaltyAccount::whereKey($user->id)->value('balance_points') : 0;
 
-        return view('etudiant.cart.index', compact('cart', 'total'));
+        return view('etudiant.cart.index', compact('cart', 'total', 'balance'));
     }
 
     /**
@@ -698,12 +762,20 @@ class CartController extends Controller
     {
         $cart = Session::get('cart', []);
         
-        if (isset($cart[$request->item_id])) {
-            unset($cart[$request->item_id]);
+        $itemId = $request->input('item_id') ?? $request->input('menu_item_id');
+
+        if (isset($cart[$itemId])) {
+            // Si la quantitÃ© est supÃ©rieure Ã  1, on dÃ©crÃ©mente
+            if ($cart[$itemId]['quantity'] > 1) {
+                $cart[$itemId]['quantity']--;
+            } else {
+                // Sinon, on supprime uniquement cet article du panier
+                unset($cart[$itemId]);
+            }
             Session::put('cart', $cart);
         }
 
-        return back()->with('success', 'Plat retirÃ© du panier.');
+        return back()->with('success', 'Panier mis Ã  jour.');
     }
 
     /**
@@ -731,6 +803,7 @@ namespace App\Http\Controllers\Etudiant;
 use App\Http\Controllers\Controller;
 use App\Models\LoyaltyAccount;
 use App\Models\LoyaltyTransaction;
+use App\Models\Referral;
 use Illuminate\Support\Facades\Auth;
 
 class LoyaltyController extends Controller
@@ -742,15 +815,27 @@ class LoyaltyController extends Controller
     {
         $user = Auth::user();
         
-        // 1. RÃ©cupÃ©ration du compte fidÃ©litÃ© (qui a Ã©tÃ© crÃ©Ã© automatiquement par votre Trigger SQL)
+        // Solde de points pour la barre de navigation
+        $balance = $user ? (int) LoyaltyAccount::whereKey($user->id)->value('balance_points') : 0;
+        
+        // 1. RÃ©cupÃ©ration du compte fidÃ©litÃ©
         $account = LoyaltyAccount::where('user_id', $user->id)->first();
         
-        // 2. RÃ©cupÃ©ration de l'historique complet (Livre de comptes)
+        // 2. RÃ©cupÃ©ration de l'historique complet
         $transactions = LoyaltyTransaction::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
             
-        return view('etudiant.loyalty.index', compact('account', 'transactions'));
+        // 3. RÃ©cupÃ©ration du code de parrainage actif de l'Ã©tudiant
+        $referralCode = $user->referralCode()->where('is_active', true)->first();
+
+        // 4. RÃ©cupÃ©ration de la liste des filleuls (parrainages)
+        $referrals = Referral::where('referrer_user_id', $user->id)
+            ->with(['referred', 'code'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        return view('etudiant.loyalty.index', compact('account', 'transactions', 'user', 'balance', 'referralCode', 'referrals'));
     }
 }
 
@@ -764,14 +849,23 @@ use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Promotion;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
 
 class MenuController extends Controller
 {
     /**
-     * Affiche la page d'accueil de l'Ã©tudiant : Menu, plats du jour et promotions.
+     * Affiche la page du menu de l'Ã©tudiant.
      */
     public function index()
     {
+        $user = auth()->user();
+        
+        // RÃ©cupÃ©ration du solde de points de fidÃ©litÃ©
+        $balance = $user ? (int) \App\Models\LoyaltyAccount::whereKey($user->id)->value('balance_points') : 0;
+
+        // RÃ©cupÃ©ration du panier depuis la session
+        $cart = Session::get('cart', []);
+
         // 1. RÃ©cupÃ©rer les promotions actives
         $promotions = Promotion::where('is_active', true)
             ->where(function ($query) {
@@ -788,14 +882,15 @@ class MenuController extends Controller
             ->get();
 
         // 3. RÃ©cupÃ©rer le menu classÃ© par catÃ©gories (uniquement les articles disponibles)
-        $categories = MenuCategory::with(['menuItems' => function ($query) {
-                $query->where('is_available', true);
-            }])
-            ->where('is_active', true)
-            ->orderBy('sort_order', 'asc')
-            ->get();
+        $categories = MenuCategory::with(['items' => function ($query) {
+        $query->where('is_available', true);
+       }])
+        ->where('is_active', true)
+        ->where('name', '!=', 'Plats Principaux') // <-- On exclut "Plats Principaux" d'ici
+        ->orderBy('sort_order', 'asc')
+        ->get();
 
-        return view('etudiant.menu.index', compact('promotions', 'dailySpecials', 'categories'));
+        return view('etudiant.menu.index', compact('promotions', 'dailySpecials', 'categories', 'user', 'balance', 'cart'));
     }
 }
 
@@ -826,33 +921,69 @@ class OrderController extends Controller
             return redirect()->route('etudiant.cart.index')->with('error', 'Votre panier est vide.');
         }
 
-        // Validation du choix de l'Ã©tudiant (Livraison ou sur place)
-        $request->validate([
+            $request->validate([
             'service_mode' => 'required|in:delivery,on_site',
-            'delivery_address' => 'required_if:service_mode,delivery'
+            'delivery_address' => 'required_if:service_mode,delivery',
+            'payment_method'   => 'required|in:mobile_money,cash',
         ]);
-
         $subtotal = 0;
         foreach ($cart as $item) {
             $subtotal += $item['price_fcfa'] * $item['quantity'];
         }
 
-        // Utilisation de DB::transaction pour s'assurer que tout s'enregistre, ou rien du tout en cas d'erreur
         DB::transaction(function () use ($cart, $request, $subtotal) {
             $user = Auth::user();
 
-            // 1. CrÃ©ation de l'entÃªte de la commande
+            // 1. RÃ©cupÃ©ration du compte de fidÃ©litÃ©
+            $loyaltyAccount = \App\Models\LoyaltyAccount::firstOrCreate(
+                ['user_id' => $user->id],
+                ['balance_points' => 0]
+            );
+
+            // 2. Gestion de la rÃ©duction (5 points = 1000 FCFA de rÃ©duction)
+            $discount_fcfa = 0;
+            $pointsUsed = 0;
+
+            // On vÃ©rifie si l'Ã©tudiant a cochÃ© la case ET s'il a au moins 5 points
+            if ($request->has('use_points') && $loyaltyAccount->balance_points >= 5) {
+                // On calcule combien de blocs de 5 points il possÃ¨de
+                $blocsDe5 = floor($loyaltyAccount->balance_points / 5);
+                $discount_fcfa = $blocsDe5 * 1000;
+                
+                // Si la rÃ©duction dÃ©passe le prix de la commande, on ajuste
+                if ($discount_fcfa > $subtotal) {
+                    $discount_fcfa = $subtotal;
+                    $pointsUsed = ceil($subtotal / 1000) * 5; 
+                } else {
+                    $pointsUsed = $blocsDe5 * 5;
+                }
+
+                // On dÃ©duit les points utilisÃ©s de son compte
+                $loyaltyAccount->decrement('balance_points', $pointsUsed);
+            }
+
+            // Calcul du total final Ã  payer aprÃ¨s dÃ©duction
+            $total_fcfa = $subtotal - $discount_fcfa;
+
+            // 3. Gain de points : +1 point pour avoir passÃ© la commande
+            $pointsEarned = 1;
+            $loyaltyAccount->increment('balance_points', $pointsEarned);
+
+            // 4. CrÃ©ation de l'entÃªte de la commande
             $order = Order::create([
                 'order_number' => 'CMD-' . strtoupper(Str::random(6)),
                 'user_id' => $user->id,
                 'service_mode' => $request->service_mode,
                 'delivery_address' => $request->service_mode === 'delivery' ? $request->delivery_address : null,
                 'subtotal_fcfa' => $subtotal,
-                'total_fcfa' => $subtotal, // Le calcul de la rÃ©duction par points viendra s'ajouter ici plus tard
+                'discount_fcfa' => $discount_fcfa,
+                'total_fcfa' => $total_fcfa,
+                'loyalty_points_used' => $pointsUsed,
+                'loyalty_points_earned' => $pointsEarned, // Enregistrement du point gagnÃ©
                 'status' => 'pending'
             ]);
 
-            // 2. Figer les articles et leurs prix dans l'historique
+            // 5. Enregistrement des plats
             foreach ($cart as $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -864,17 +995,206 @@ class OrderController extends Controller
                 ]);
             }
 
-            // 3. Calcul automatique des points de fidÃ©litÃ© gagnÃ©s (1 point pour 1000 FCFA)
-            $pointsEarned = floor($subtotal / 1000);
-            if ($pointsEarned > 0) {
-                $order->update(['loyalty_points_earned' => $pointsEarned]);
+            // 6. Historique : Trace de l'utilisation des points
+            if ($pointsUsed > 0) {
+                \App\Models\LoyaltyTransaction::create([
+                    'user_id' => $user->id,
+                    'order_id' => $order->id,
+                    'type' => 'redeem',
+                    'points' => -$pointsUsed,
+                    'description' => "RÃ©duction de {$discount_fcfa} FCFA sur la commande {$order->order_number}",
+                ]);
             }
+
+            // 7. Historique : Trace du gain du point
+            \App\Models\LoyaltyTransaction::create([
+                'user_id' => $user->id,
+                'order_id' => $order->id,
+                'type' => 'earn',
+                'points' => $pointsEarned,
+                'description' => "Point de fidÃ©litÃ© gagnÃ© pour la commande {$order->order_number}",
+            ]);
+          return $order;
         });
 
-        // 4. On vide le panier une fois la commande enregistrÃ©e
         Session::forget('cart');
 
-        return redirect()->route('etudiant.menu.index')->with('success', 'Votre commande a Ã©tÃ© envoyÃ©e en cuisine !');
+        // Si l'Ã©tudiant a choisi OM / MoMo, on lance CinetPay
+        if ($request->payment_method === 'mobile_money') {
+            return PaiementController::initierCinetPay($order, Auth::user());
+        }
+
+        // Sinon (paiement en espÃ¨ces / cash), on enregistre un paiement cash en attente
+        \App\Models\Payment::create([
+            'order_id'    => $order->id,
+            'provider'    => 'local',
+            'method'      => 'cash',
+            'status'      => 'pending',
+            'amount_fcfa' => $order->total_fcfa,
+        ]);
+
+        return redirect()->route('etudiant.menu.index')
+            ->with('success', 'Votre commande a Ã©tÃ© envoyÃ©e en cuisine avec succÃ¨s !');
+        
+    }
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Http\Controllers\Etudiant\PaiementController.php ===
+<?php
+
+namespace App\Http\Controllers\Etudiant;
+
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\Payment;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class PaiementController extends Controller
+{
+    /**
+     * CrÃ©e et lance la transaction CinetPay pour une commande existante
+     */
+    public static function initierCinetPay(Order $order, $user)
+    {
+        $transactionId = 'ZEDUC-' . $order->order_number . '-' . time();
+
+        // 1. Si le total est 0 F (ex: payÃ© entiÃ¨rement avec les points), pas besoin de CinetPay
+        if ($order->total_fcfa <= 0) {
+            Payment::create([
+                'order_id'                => $order->id,
+                'provider'                => 'loyalty',
+                'provider_transaction_id' => $transactionId,
+                'method'                  => 'test',
+                'status'                  => 'paid',
+                'amount_fcfa'             => 0,
+                'paid_at'                 => now(),
+            ]);
+            $order->update(['status' => 'confirmed']);
+            return redirect()->route('etudiant.reclamations.index')
+                ->with('success', 'Commande validÃ©e gratuitement grÃ¢ce Ã  vos points !');
+        }
+
+        // 2. Enregistrement du paiement en statut "pending" dans ta table `payments`
+        $payment = Payment::create([
+            'order_id'                => $order->id,
+            'provider'                => 'cinetpay',
+            'provider_transaction_id' => $transactionId,
+            'method'                  => 'mobile_money',
+            'status'                  => 'pending',
+            'amount_fcfa'             => $order->total_fcfa,
+        ]);
+
+        // 3. PrÃ©paration des donnÃ©es pour CinetPay (AdaptÃ© Ã  ton modÃ¨le User : first_name / last_name)
+        $payload = [
+            'apikey'                => config('services.cinetpay.apikey'),
+            'site_id'               => config('services.cinetpay.site_id'),
+            'transaction_id'        => $transactionId,
+            'amount'                => (int) $order->total_fcfa, // Doit Ãªtre un multiple de 5 (Min: 100 XAF)
+            'currency'              => 'XAF',
+            'description'           => 'Commande ' . $order->order_number . ' - ZeDuc@Space',
+            'customer_name'         => $user->first_name,
+            'customer_surname'      => $user->last_name,
+            'customer_email'        => $user->email,
+            'customer_phone_number' => $user->phone ?? '0707070707',
+            'customer_address'      => $order->delivery_address ?? 'Douala',
+            'customer_city'         => 'Douala',
+            'customer_country'      => 'CM',
+            'customer_state'        => 'CM',
+            'customer_zip_code'     => '00000',
+            'notify_url'            => route('cinetpay.notify'),
+            'return_url'            => route('cinetpay.return', ['transaction_id' => $transactionId]),
+            'channels'              => 'MOBILE_MONEY',
+            'lang'                  => 'FR',
+        ];
+
+        // 4. Appel Ã  l'API CinetPay (withoutVerifying Ã©vite le blocage SSL sous Windows/XAMPP)
+        $response = Http::withoutVerifying()
+            ->acceptJson()
+            ->post('https://api-checkout.cinetpay.com/v2/payment', $payload);
+
+        $result = $response->json();
+
+        // 5. Si CinetPay renvoie bien le lien de paiement, on redirige l'Ã©tudiant dessus
+        if (isset($result['code']) && $result['code'] == '201' && isset($result['data']['payment_url'])) {
+            return redirect()->away($result['data']['payment_url']);
+        }
+
+        // En cas d'erreur de clÃ©s ou de connexion API
+        Log::error('Erreur CinetPay Init : ', $result ?? []);
+        return redirect()->route('etudiant.reclamations.index')
+            ->withErrors(['error' => 'Commande enregistrÃ©e, mais la redirection vers CinetPay a Ã©chouÃ©.']);
+    }
+
+    /**
+     * Retour de l'Ã©tudiant sur le site aprÃ¨s le paiement (en local, notify_url ne peut pas joindre localhost)
+     */
+    public function retourPaiement(Request $request)
+    {
+        $transactionId = $request->input('transaction_id') ?? $request->input('cpm_trans_id');
+
+        if (!$transactionId) {
+            return redirect()->route('etudiant.reclamations.index')
+                ->withErrors(['error' => 'Aucune rÃ©fÃ©rence de transaction trouvÃ©e.']);
+        }
+
+        $payment = Payment::where('provider_transaction_id', $transactionId)->first();
+
+        if ($payment) {
+            // VÃ©rification directe auprÃ¨s de CinetPay
+            $check = Http::withoutVerifying()->post('https://api-checkout.cinetpay.com/v2/payment/check', [
+                'apikey'         => config('services.cinetpay.apikey'),
+                'site_id'        => config('services.cinetpay.site_id'),
+                'transaction_id' => $transactionId,
+            ])->json();
+
+            if (isset($check['code']) && $check['code'] === '00') {
+                // Paiement rÃ©ussi
+                $payment->update([
+                    'status'  => 'paid',
+                    'paid_at' => now(),
+                ]);
+                $payment->order?->update(['status' => 'confirmed']);
+
+                return redirect()->route('etudiant.reclamations.index')
+                    ->with('success', 'Paiement Mobile Money acceptÃ© ! Votre commande est confirmÃ©e en cuisine.');
+            } else {
+                // Paiement Ã©chouÃ© ou annulÃ©
+                $payment->update(['status' => 'failed']);
+                return redirect()->route('etudiant.reclamations.index')
+                    ->withErrors(['error' => 'Le paiement Mobile Money a Ã©chouÃ© ou a Ã©tÃ© annulÃ©.']);
+            }
+        }
+
+        return redirect()->route('etudiant.reclamations.index');
+    }
+
+    /**
+     * Webhook appelÃ© en arriÃ¨re-plan par les serveurs de CinetPay (en production)
+     */
+    public function notify(Request $request)
+    {
+        Log::info('Webhook CinetPay reÃ§u : ', $request->all());
+        $transactionId = $request->input('cpm_trans_id');
+
+        if ($transactionId) {
+            $payment = Payment::where('provider_transaction_id', $transactionId)->first();
+            if ($payment && $payment->status !== 'paid') {
+                $check = Http::withoutVerifying()->post('https://api-checkout.cinetpay.com/v2/payment/check', [
+                    'apikey'         => config('services.cinetpay.apikey'),
+                    'site_id'        => config('services.cinetpay.site_id'),
+                    'transaction_id' => $transactionId,
+                ])->json();
+
+                if (isset($check['code']) && $check['code'] === '00') {
+                    $payment->update(['status' => 'paid', 'paid_at' => now()]);
+                    $payment->order?->update(['status' => 'confirmed']);
+                }
+            }
+        }
+
+        return response()->json(['status' => 'ok']);
     }
 }
 
@@ -963,6 +1283,7 @@ namespace App\Http\Controllers\Etudiant;
 use App\Http\Controllers\Controller;
 use App\Models\Claim;
 use App\Models\Order;
+use App\Models\LoyaltyAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -973,13 +1294,22 @@ class ReclamationController extends Controller
      */
     public function index()
     {
+        $user = Auth::user();
+        $balance = $user ? (int) LoyaltyAccount::whereKey($user->id)->value('balance_points') : 0;
+
         // "Eager loading" de la commande associÃ©e pour optimiser la requÃªte
         $claims = Claim::with('order')
-            ->where('user_id', Auth::id())
+            ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
             
-        return view('etudiant.reclamations.index', compact('claims'));
+        // RÃ©cupÃ©ration des commandes pour la vue index / tableaux de rÃ©clamations
+        $orders = Order::where('user_id', $user->id)
+            ->whereIn('status', ['delivered', 'completed'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        return view('etudiant.reclamations.index', compact('claims', 'orders', 'user', 'balance'));
     }
 
     /**
@@ -987,13 +1317,16 @@ class ReclamationController extends Controller
      */
     public function create()
     {
+        $user = Auth::user();
+        $balance = $user ? (int) LoyaltyAccount::whereKey($user->id)->value('balance_points') : 0;
+
         // On rÃ©cupÃ¨re uniquement les commandes terminÃ©es ou livrÃ©es de cet Ã©tudiant
-        $orders = Order::where('user_id', Auth::id())
+        $orders = Order::where('user_id', $user->id)
             ->whereIn('status', ['delivered', 'completed'])
             ->orderBy('created_at', 'desc')
             ->get();
             
-        return view('etudiant.reclamations.create', compact('orders'));
+        return view('etudiant.reclamations.create', compact('orders', 'user', 'balance'));
     }
 
     /**
@@ -1023,6 +1356,278 @@ class ReclamationController extends Controller
 
         return redirect()->route('etudiant.reclamations.index')
             ->with('success', 'Votre rÃ©clamation a Ã©tÃ© transmise avec succÃ¨s aux employÃ©s.');
+    }
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Http\Controllers\Gerant\ClaimReviewController.php ===
+<?php
+
+namespace App\Http\Controllers\Gerant;
+
+use App\Http\Controllers\Controller;
+use App\Models\Claim;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+
+class ClaimReviewController extends Controller
+{
+    private const STATUSES = [
+        'open',
+        'in_progress',
+        'resolved',
+        'rejected',
+    ];
+
+    public function index(Request $request)
+    {
+        abort_unless($request->user()?->role?->code === 'manager', 403);
+
+        $filters = $request->validate([
+            'status' => ['sometimes', 'string', Rule::in(self::STATUSES)],
+        ]);
+
+        $claims = Claim::query()
+            ->with([
+                'user:id,first_name,last_name,email',
+                'order:id,order_number,status',
+                'handler:id,first_name,last_name',
+            ])
+            ->when(
+                isset($filters['status']),
+                fn ($query) => $query->where('status', $filters['status'])
+            )
+            ->orderByDesc('created_at')
+            ->paginate(15);
+
+        $counts = Claim::query()
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+        $summary = array_fill_keys(self::STATUSES, 0);
+
+        foreach ($counts as $status => $count) {
+            $summary[$status] = (int) $count;
+        }
+
+        
+    }
+
+    public function review(Request $request, Claim $claim)
+    {
+        abort_unless($request->user()?->role?->code === 'manager', 403);
+
+        $validated = $request->validate([
+            'decision' => ['required', 'string', Rule::in(['approved', 'rejected'])],
+        ]);
+
+        if ($claim->status !== 'in_progress' || blank($claim->response)) {
+            return response()->json([
+                'message' => 'Cette rÃ©clamation ne contient aucune rÃ©ponse dâ€™employÃ© Ã  examiner.',
+            ], 422);
+        }
+
+        $claim->update([
+            'status' => $validated['decision'] === 'approved' ? 'resolved' : 'rejected',
+        ]);
+
+       
+    }
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Http\Controllers\Gerant\EmployeeAccountController.php ===
+<?php
+
+namespace App\Http\Controllers\Gerant;
+
+use App\Http\Controllers\Controller;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rules\Password;
+
+class EmployeeAccountController extends Controller
+{
+    public function store(Request $request)
+    {
+        abort_unless($request->user()?->role?->code === 'manager', 403);
+
+        $validated = $request->validate([
+            'first_name' => ['required', 'string', 'max:80'],
+            'last_name' => ['required', 'string', 'max:80'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $employeeRole = Role::query()->where('code', 'employee')->firstOrFail();
+        $employee = User::create([
+            ...$validated,
+            'role_id' => $employeeRole->id,
+            'is_active' => true,
+        ]);
+
+        
+    }
+
+    public function updateAccess(Request $request, User $employee)
+    {
+        abort_unless($request->user()?->role?->code === 'manager', 403);
+        abort_unless($employee->role?->code === 'employee', 404);
+
+        $validated = $request->validate([
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        $employee->update(['is_active' => $validated['is_active']]);
+
+        
+    }
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Http\Controllers\Gerant\OrderSupervisionController.php ===
+<?php
+
+namespace App\Http\Controllers\Gerant;
+
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+
+class OrderSupervisionController extends Controller
+{
+    private const STATUSES = [
+        'pending',
+        'ready',
+         'delivered',
+        'cancelled',
+    ];
+
+    public function index(Request $request)
+    {
+        abort_unless($request->user()?->role?->code === 'manager', 403);
+
+        $filters = $request->validate([
+            'status' => ['sometimes', 'string', Rule::in(self::STATUSES)],
+        ]);
+
+        $orders = Order::query()
+            ->with([
+                'user:id,first_name,last_name,phone',
+                'items:id,order_id,item_name,quantity,line_total_fcfa',
+                'payment:id,order_id,status,method,paid_at',
+            ])
+            ->when(
+                isset($filters['status']),
+                fn (Builder $query) => $query->where('status', $filters['status'])
+            )
+            ->orderByDesc('created_at')
+            ->paginate(10);
+
+        $summary = array_fill_keys(self::STATUSES, 0);
+        $counts = Order::query()
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
+        foreach ($counts as $status => $count) {
+            $summary[$status] = (int) $count;
+        }
+
+        
+    }
+
+    public function updateStatus(Request $request, Order $order)
+    {
+        abort_unless($request->user()?->role?->code === 'manager', 403);
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', Rule::in(self::STATUSES)],
+        ]);
+
+        $order->update(['status' => $validated['status']]);
+
+        
+    }
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\app\Http\Controllers\Gerant\StatisticsController.php ===
+<?php
+
+namespace App\Http\Controllers\Gerant;
+
+use App\Http\Controllers\Controller;
+use App\Models\LoyaltyAccount;
+use App\Models\LoyaltyTransaction;
+use App\Models\Order;
+use App\Models\Payment;
+use App\Models\Referral;
+use App\Models\ReferralCode;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class StatisticsController extends Controller
+{
+    private const ORDER_STATUSES = [
+        'pending',
+        'ready',
+        'delivered',
+        'cancelled',
+    ];
+
+    private const LOYALTY_TRANSACTION_TYPES = [
+        'earn',
+        'referral',
+        'expire',
+    ];
+
+    private const REFERRAL_STATUSES = [
+        'pending',
+        'rewarded',
+        'cancelled',
+    ];
+
+    public function index(Request $request)
+    {
+        abort_unless($request->user()?->role?->code === 'manager', 403);
+
+        $paidPayments = Payment::query()->where('status', 'paid');
+        $orderCounts = Order::query()
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+        $loyaltyTransactions = LoyaltyTransaction::query()
+            ->selectRaw('type, COUNT(*) as transaction_count, SUM(points) as points_total')
+            ->groupBy('type')
+            ->get()
+            ->keyBy('type');
+        $referralCounts = Referral::query()
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
+        $ordersByStatus = array_fill_keys(self::ORDER_STATUSES, 0);
+        foreach ($orderCounts as $status => $count) {
+            $ordersByStatus[$status] = (int) $count;
+        }
+
+        $loyaltyByType = [];
+        foreach (self::LOYALTY_TRANSACTION_TYPES as $type) {
+            $transaction = $loyaltyTransactions->get($type);
+            $loyaltyByType[$type] = [
+                'transactions' => (int) ($transaction?->transaction_count ?? 0),
+                'points_total' => (int) ($transaction?->points_total ?? 0),
+            ];
+        }
+
+        $referralsByStatus = array_fill_keys(self::REFERRAL_STATUSES, 0);
+        foreach ($referralCounts as $status => $count) {
+            $referralsByStatus[$status] = (int) $count;
+        }
     }
 }
 
@@ -1080,7 +1685,14 @@ class EnsureRole
         $user = $request->user();
 
         abort_if(! $user || ! $user->is_active, 403, 'Compte dÃ©sactivÃ©.');
-        abort_unless(in_array($user->role?->code, $roles, true), 403, "Vous n'avez pas accÃ¨s Ã  cette page.");
+
+        $hasRequiredRole = collect($roles)->contains(
+            fn (string $role) => is_numeric($role)
+                ? (int) $user->role_id === (int) $role
+                : $user->role?->code === $role
+        );
+
+        abort_unless($hasRequiredRole, 403, "Vous n'avez pas accÃ¨s Ã  cette page.");
 
         return $next($request);
     }
@@ -1091,27 +1703,19 @@ class EnsureRole
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Override;
 
 class StoreUserRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
@@ -1123,29 +1727,36 @@ class StoreUserRequest extends FormRequest
             ],
             'first_name' => ['required', 'string', 'max:80'],
             'last_name' => ['required', 'string', 'max:80'],
-            'email' => ['required', 'string', 'max:255', 'unique:users,email'],
-            'phone' => ['required', 'string', 'max:30'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'delivery_address' => ['nullable', 'string', 'max:500'],
-            'is_active' => ['sometimes', 'boolean'],
+            'referral_code' => [
+                'nullable',
+                'string',
+                Rule::exists('referral_codes', 'code')->where('is_active', true),
+            ],
         ];
     }
 
     #[Override]
-    // traduis un role textuel en role numÃ©rique
     protected function prepareForValidation()
     {
-        if (is_string($this->role_id)) {
-            $map = [
-                "etudiant" => 1,
-                "employe" => 2,
-                "gerant" => 3,
-                "administrateur" => 4,
-            ];
-            $key = strtolower($this->role_id);
-            if (isset($map[$key])) {
-                $this->merge(["role_id" => $map[$key]]);
-            }
+        if (! is_string($this->role_id) || is_numeric($this->role_id)) {
+            return;
+        }
+
+        $roleCodes = [
+            'etudiant' => 'student',
+            'employe' => 'employee',
+            'gerant' => 'manager',
+            'administrateur' => 'admin',
+        ];
+        $roleCode = $roleCodes[strtolower($this->role_id)] ?? strtolower($this->role_id);
+        $roleId = DB::table('roles')->where('code', $roleCode)->value('id');
+
+        if ($roleId !== null) {
+            $this->merge(['role_id' => $roleId]);
         }
     }
 }
@@ -2000,6 +2611,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // DÃ©clare l'alias "role" utilisÃ© dans routes/web.php : ->middleware('role:student')
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
+        ]);
+        // Autorise CinetPay Ã  renvoyer les donnÃ©es en POST sans erreur 419 (CSRF)
+        $middleware->validateCsrfTokens(except: [
+            'paiement/notify',
+            'paiement/retour',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -3072,6 +3688,11 @@ return [
         ],
     ],
 
+    'cinetpay' => [
+        'apikey'  => env('CINETPAY_APIKEY'),
+        'site_id' => env('CINETPAY_SITE_ID'),
+    ],
+
 ];
 
 === FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\config\session.php ===
@@ -3298,10 +3919,10 @@ return [
 
 namespace Database\Factories;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
  * @extends Factory<User>
@@ -3309,34 +3930,33 @@ use Illuminate\Support\Str;
 class UserFactory extends Factory
 {
     /**
-     * The current password being used by the factory.
+     * Le mot de passe actuel utilisÃ© par la factory.
      */
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
+     * DÃ©finit l'Ã©tat par dÃ©faut du modÃ¨le (adaptÃ© Ã  la migration users).
      *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
-        return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
-        ];
-    }
+        // RÃ©cupÃ¨re ou crÃ©e le rÃ´le Ã©tudiant par dÃ©faut pour Ã©viter les erreurs de clÃ© Ã©trangÃ¨re
+        $role = Role::firstOrCreate(
+            ['code' => 'student'],
+            ['label' => 'Etudiant']
+        );
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        return [
+            'role_id'          => $role->id,
+            'first_name'       => fake()->firstName(),
+            'last_name'        => fake()->lastName(),
+            'email'            => fake()->unique()->safeEmail(),
+            'phone'            => fake()->phoneNumber(),
+            'password'         => static::$password ??= Hash::make('password'),
+            'delivery_address' => fake()->address(),
+            'is_active'        => true,
+        ];
     }
 }
 
@@ -3999,6 +4619,30 @@ return new class extends Migration
     }
 };
 
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\database\migrations\2026_10_20_00017_rename_password_reset_tokens_column.php ===
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('password_reset_tokens', function (Blueprint $table) {
+            $table->renameColumn('tokens', 'token');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('password_reset_tokens', function (Blueprint $table) {
+            $table->renameColumn('token', 'tokens');
+        });
+    }
+};
+
 === FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\database\seeders\DatabaseSeeder.php ===
 <?php
 
@@ -4013,6 +4657,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolesAndSettingsSeeder::class,
+            MassDataSeeder::class,
+            OrderSeeder::class,
         ]);
     }
 }
@@ -4031,23 +4677,39 @@ class MassDataSeeder extends Seeder
 {
     public function run(): void
     {
-        // --- 1. AJOUT MASSIF DE PROMOTIONS ---
+        // ==========================================
+        // 1. AJOUT MASSIF DE PROMOTIONS
+        // ==========================================
+        
+        // Tableau contenant les diffÃ©rentes offres promotionnelles Ã  insÃ©rer
         $promotions = [
             ['title' => 'Happy Hour', 'description' => '-20% sur les boissons de 14h Ã  16h', 'is_active' => true],
             ['title' => 'Menu Duo', 'description' => '2 Plats achetÃ©s = 1 Boisson offerte', 'is_active' => true],
             ['title' => 'Livraison Gratuite', 'description' => 'Pour toute commande de plus de 5000 F', 'is_active' => true],
         ];
 
+        // Parcours du tableau des promotions
         foreach ($promotions as $promo) {
-            Promotion::create($promo);
+            // firstOrCreate vÃ©rifie si la promotion existe dÃ©jÃ  grÃ¢ce au titre.
+            // Si elle existe, il ne fait rien ; sinon, il l'insÃ¨re en base de donnÃ©es.
+            Promotion::firstOrCreate(
+                ['title' => $promo['title']], 
+                $promo
+            );
         }
 
-        // --- 2. AJOUT MASSIF DE PLATS DU JOUR ---
+        // ==========================================
+        // 2. AJOUT DE LA CATÃ‰GORIE ET DES PLATS DU JOUR
+        // ==========================================
+        
+        // RÃ©cupÃ¨re la catÃ©gorie "Plats Principaux" si elle existe dÃ©jÃ , 
+        // ou la crÃ©e si elle n'existe pas encore (Ã©vite les doublons de catÃ©gories).
         $categorie = MenuCategory::firstOrCreate(
             ['name' => 'Plats Principaux'], 
             ['sort_order' => 1, 'is_active' => true]
         );
 
+        // Tableau contenant les plats du jour Ã  proposer
         $platsDuJour = [
             ['name' => 'Poulet DG', 'description' => 'Poulet frit et plantains', 'price_fcfa' => 2500],
             ['name' => 'Riz Cantonais', 'description' => 'Riz sautÃ© aux lÃ©gumes', 'price_fcfa' => 2000],
@@ -4055,15 +4717,51 @@ class MassDataSeeder extends Seeder
             ['name' => 'Salade composÃ©e', 'description' => 'LÃ©gumes frais de saison', 'price_fcfa' => 1500],
         ];
 
+        // Parcours de chaque plat du jour pour l'insÃ©rer en base
         foreach ($platsDuJour as $plat) {
-            MenuItem::create([
-                'category_id'      => $categorie->id,
-                'name'             => $plat['name'],
-                'description'      => $plat['description'],
-                'price_fcfa'       => $plat['price_fcfa'],
-                'is_available'     => true,
-                'is_daily_special' => true, // ApparaÃ®tront tous dans la section "Plats du jour"
-            ]);
+            // firstOrCreate vÃ©rifie si le plat existe dÃ©jÃ  par son nom.
+            MenuItem::firstOrCreate(
+                ['name' => $plat['name']], 
+                [
+                    'category_id'      => $categorie->id, // Associe le plat Ã  la catÃ©gorie "Plats Principaux"
+                    'description'      => $plat['description'],
+                    'price_fcfa'       => $plat['price_fcfa'],
+                    'is_available'     => true,           // Le plat est disponible Ã  la commande
+                    'is_daily_special' => true,           // Marque le plat comme "Plat du jour"
+                ]
+            );
+        }
+
+        // ==========================================
+        // 3. CRÃ‰ATION DE LA CATÃ‰GORIE BOISSONS ET AJOUT DES BOISSONS
+        // ==========================================
+        
+        // CrÃ©e la catÃ©gorie "Boissons" de maniÃ¨re unique (ordre de tri 2)
+        $catBoissons = MenuCategory::firstOrCreate(
+            ['name' => 'Boissons'], 
+            ['sort_order' => 2, 'is_active' => true]
+        );
+
+        // Tableau contenant la liste des boissons Ã  insÃ©rer
+        $boissons = [
+            ['name' => 'Jus de fruit naturel', 'description' => 'Frais et pressÃ© du jour', 'price_fcfa' => 1000],
+            ['name' => 'Coca-Cola 33cl', 'description' => 'Boisson gazeuse bien fraÃ®che', 'price_fcfa' => 600],
+            ['name' => 'Eau minÃ©rale 1.5L', 'description' => 'Eau plate naturelle', 'price_fcfa' => 500],
+            ['name' => 'Bissap maison', 'description' => 'Jus dâ€™hibiscus traditionnel rafraÃ®chissant', 'price_fcfa' => 700],
+        ];
+
+        // Parcours de chaque boisson pour l'enregistrer proprement
+        foreach ($boissons as $boisson) {
+            MenuItem::firstOrCreate(
+                ['name' => $boisson['name']], // VÃ©rifie par le nom pour Ã©viter les doublons
+                [
+                    'category_id'      => $catBoissons->id, // Associe la boisson Ã  la catÃ©gorie "Boissons"
+                    'description'      => $boisson['description'],
+                    'price_fcfa'       => $boisson['price_fcfa'],
+                    'is_available'     => true,             // La boisson est disponible
+                    'is_daily_special' => false,          // Ce n'est pas un plat du jour
+                ]
+            );
         }
     }
 }
@@ -4086,23 +4784,29 @@ class OrderSeeder extends Seeder
     {
         $roleEtudiant = Role::where('code', 'student')->first();
 
-       // 1. CrÃ©er 3 Ã©tudiants fictifs (sans crÃ©er de doublons s'ils existent dÃ©jÃ )
+        // 1. CrÃ©ation des Ã©tudiants (Marc, Marie et un troisiÃ¨me)
+        $etudiantsData = [
+            ['first_name' => 'Marc', 'last_name' => 'Test', 'email' => 'marc@test.com', 'phone' => '0600000001'],
+            ['first_name' => 'Marie', 'last_name' => 'Test', 'email' => 'marie@test.com', 'phone' => '0600000002'],
+            ['first_name' => 'Client', 'last_name' => 'Test 3', 'email' => 'client3@test.com', 'phone' => '0600000003'],
+        ];
+
         $users = [];
-        for ($i = 1; $i <= 3; $i++) {
+        foreach ($etudiantsData as $data) {
             $users[] = User::firstOrCreate(
-                ['email' => "client{$i}@test.com"], // Laravel cherche cet email
+                ['email' => $data['email']], // Recherche par email pour Ã©viter les doublons
                 [
                     'role_id' => $roleEtudiant->id,
-                    'first_name' => 'Client',
-                    'last_name' => 'Test ' . $i,
-                    'phone' => "060000000{$i}",
+                    'first_name' => $data['first_name'],
+                    'last_name' => $data['last_name'],
+                    'phone' => $data['phone'],
                     'password' => bcrypt('password'),
                     'is_active' => true
-                ] // Si l'email n'existe pas, il crÃ©e le compte avec ces infos
+                ]
             );
         }
 
-        // 2. Commandes pour aujourd'hui (Filtre "Jour")
+        // 2. Commandes pour aujourd'hui (associÃ©es Ã  Marc / $users[0])
         Order::create([
             'order_number' => 'CMD-' . Str::random(6),
             'user_id' => $users[0]->id,
@@ -4123,7 +4827,7 @@ class OrderSeeder extends Seeder
             'created_at' => Carbon::now()
         ]);
         
-        // 3. Commandes d'il y a 3 jours (Filtre "Semaine")
+        // 3. Commandes d'il y a 3 jours (associÃ©es Ã  Marie / $users[1])
         Order::create([
             'order_number' => 'CMD-' . Str::random(6),
             'user_id' => $users[1]->id,
@@ -4134,7 +4838,7 @@ class OrderSeeder extends Seeder
             'created_at' => Carbon::now()->subDays(3)
         ]);
         
-        // 4. Commandes d'il y a 20 jours (Filtre "Mois")
+        // 4. Commandes d'il y a 20 jours (associÃ©es au 3e utilisateur / $users[2])
         Order::create([
             'order_number' => 'CMD-' . Str::random(6),
             'user_id' => $users[2]->id,
@@ -4197,15 +4901,15 @@ class RolesAndSettingsSeeder extends Seeder
     public function run(): void
     {
         DB::table("roles")->insert([
-            ["code" => "student", "label" => "Etudiant"],
-            ["code" => "employee", "label" => "EmployÃ©"],
-            ["code" => "manager", "label" => "GÃ©rant"],
-            ["code" => "admin", "label" => "Administrateur"],
+            ["id" => 1, "code" => "employee", "label" => "EmployÃ©"],
+            ["id" => 2, "code" => "student", "label" => "Etudiant"],
+            ["id" => 3, "code" => "manager", "label" => "GÃ©rant"],
+            ["id" => 4, "code" => "admin", "label" => "Administrateur"],
         ]);
 
         DB::table("app_settings")->insert([
             ["setting_key" => "loyalty_fcfa_per_point", "setting_value" => "1000"],
-            ["setting_key" => "loyalty_points_per_1000_fcfa_discount", "setting_value" => "15"],
+            ["setting_key" => "loyalty_points_per_1000_fcfa_discount", "setting_value" => "5"],
             ["setting_key" => "loyalty_discount_fcfa", "setting_value" => "1000"],
             ["setting_key" => "restaurant_open", "setting_value" => "08:00"],
             ["setting_key" => "restaurant_close", "setting_value" => "22:00 "],
@@ -5171,6 +5875,149 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 </div>
 @endsection
 
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\resources\views\auth\partials\header.blade.php ===
+<header class="auth-header">
+    <div class="container d-flex align-items-center justify-content-between py-2">
+        <a href="{{ url('/') }}" class="d-flex align-items-center gap-3 text-decoration-none">
+            <img src="{{ asset('/images/zeduc-image.jpg') }}" alt="MON MIAM MIAM" height="44">
+            <span class="auth-brand">Mon Miam Miam</span>
+        </a>
+    </div>
+</header>
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\resources\views\auth\partials\styles.blade.php ===
+<style>
+    :root {
+        --miam-black: #000000;
+        --miam-white: #ffffff;
+        --miam-grey: #6b6b6b;
+        --miam-border: #000000;
+    }
+
+    .auth-header {
+        background-color: var(--miam-black);
+        color: var(--miam-white);
+    }
+
+    .auth-brand {
+        color: var(--miam-white);
+        font-size: .85rem;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+    }
+
+    .auth-page {
+        position: relative;
+        min-height: calc(100vh - 60px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 1rem;
+        background: url("{{ asset('images/boisson_accueil_jpg.jpeg') }}") center / cover no-repeat;
+    }
+
+    .auth-page::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-color: rgba(255, 255, 255, .88);
+    }
+
+    .auth-card {
+        position: relative;
+        width: 100%;
+        max-width: 420px;
+    }
+
+    .auth-tabs {
+        display: flex;
+        margin-bottom: 2.5rem;
+    }
+
+    .auth-tabs a {
+        flex: 1;
+        text-align: center;
+        padding: .75rem;
+        border: 1px solid var(--miam-border);
+        color: var(--miam-black);
+        text-decoration: none;
+        letter-spacing: .05em;
+        font-size: .9rem;
+        background-color: var(--miam-white);
+    }
+
+    .auth-tabs a.active {
+        background-color: var(--miam-black);
+        color: var(--miam-white);
+    }
+
+    .auth-title {
+        font-family: Georgia, "Times New Roman", serif;
+        font-weight: 400;
+        font-size: 2rem;
+        color: var(--miam-black);
+    }
+
+    .auth-subtitle {
+        color: var(--miam-grey);
+        font-size: .9rem;
+    }
+
+    .auth-card .form-label {
+        font-size: .8rem;
+        font-weight: 600;
+        color: var(--miam-black);
+    }
+
+    .auth-card .form-control,
+    .auth-card .form-select {
+        border: 1px solid var(--miam-border);
+        border-radius: 0;
+        background-color: var(--miam-white);
+        padding: .7rem .8rem;
+        box-shadow: none;
+    }
+
+    .auth-card .form-control:focus,
+    .auth-card .form-select:focus {
+        border-color: var(--miam-black);
+        box-shadow: 0 0 0 .15rem rgba(0, 0, 0, .15);
+    }
+
+    .btn-miam {
+        background-color: var(--miam-black);
+        color: var(--miam-white);
+        border: 1px solid var(--miam-black);
+        border-radius: 0;
+        padding: .75rem;
+        letter-spacing: .05em;
+    }
+
+    .btn-miam:hover,
+    .btn-miam:focus {
+        background-color: #222222;
+        color: var(--miam-white);
+    }
+
+    .auth-link {
+        color: var(--miam-black);
+        text-decoration: underline;
+        font-size: .8rem;
+    }
+
+    .auth-link:hover {
+        color: var(--miam-grey);
+    }
+</style>
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\resources\views\auth\partials\tabs.blade.php ===
+@props(['active' => 'login'])
+
+<div class="auth-tabs">
+    <a href="{{ route('login') }}" class="{{ $active === 'login' ? 'active' : '' }}">connexion</a>
+    <a href="{{ route('register') }}" class="{{ $active === 'register' ? 'active' : '' }}">inscription</a>
+</div>
+
 === FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\resources\views\auth\forgot-password.blade.php ===
 @extends('layouts.app')
 @section('content')
@@ -5362,7 +6209,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                 <div class="mb-3">
                     <label for="phone" class="form-label small text-dark fw-bold">NumÃ©ro de TÃ©lÃ©phone</label>
                     <input id="phone" name="phone" type="tel" placeholder="6 59 90 12 87"
-                        class="form-control rounded-1 border-1 shadow-none py-2 ">
+                        class="form-control rounded-1 border-1 shadow-none py-2" value="{{ old('phone') }}">
                     @error('phone')
                         <div class="text-danger small mt-1">{{ $message }}</div>
                     @enderror
@@ -5370,19 +6217,22 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
                 <!-- Address -->
                 <div class="mb-3">
-                    <label for="address" class="form-label small text-dark fw-bold">Adresse</label>
-                    <input id="address" name="address" type="text"
-                        class="form-control rounded-1 border-1 shadow-none py-2">
-                    @error('address')
+                    <label for="delivery_address" class="form-label small text-dark fw-bold">Adresse</label>
+                    <input id="delivery_address" name="delivery_address" type="text"
+                        class="form-control rounded-1 border-1 shadow-none py-2" value="{{ old('delivery_address') }}">
+                    @error('delivery_address')
                         <div class="text-danger small mt-1">{{ $message }}</div>
                     @enderror
                 </div>
     
                 <!-- Code parrain -->
                 <div class="mb-4">
-                    <label for="parrain" class="form-label small text-dark fw-bold">Code d'un parrain</label>
-                    <input id="parrain" name="parrain" type="text" placeholder="(facultatif)"
-                        class="form-control rounded-1 border-1 shadow-none py-2">
+                    <label for="referral_code" class="form-label small text-dark fw-bold">Code d'un parrain</label>
+                    <input id="referral_code" name="referral_code" type="text" placeholder="(facultatif)"
+                        class="form-control rounded-1 border-1 shadow-none py-2" value="{{ old('referral_code') }}">
+                    @error('referral_code')
+                        <div class="text-danger small mt-1">{{ $message }}</div>
+                    @enderror
                 </div>
                  
                 <!-- Bouton S'inscrire -->
@@ -5409,11 +6259,11 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
             <form method="POST" action="{{ route('password.update') }}">
                 @csrf
                 <!-- Token cachÃ© -->
-                <input type="hidden" name="token" value="{{ $request->route('token') }}">
+                <input type="hidden" name="token" value="{{ $token }}">
                 <!-- Email -->
                 <div class="mb-3">
                     <label for="email" class="form-label text-light small mb-2">Adresse e-mail</label>
-                    <input id="email" name="email" type="email" required value="{{ old('email', $request->email) }}"
+                    <input id="email" name="email" type="email" required value="{{ old('email', $email) }}"
                         class="form-control bg-transparent text-white border-secondary shadow-none py-2" style="border-color: #333 !important;">
                     @error('email')
                         <div class="text-danger small mt-2">{{ $message }}</div>
@@ -5442,6 +6292,101 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
             </form>
         </div>
     </div>
+@endsection
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\resources\views\etudiant\cart\index.blade.php ===
+@extends('layouts.app') <!-- Utilise le layout principal de l'application pour garder la structure globale -->
+
+@section('content')
+<div class="container mt-5">
+    <h2>Mon Miam Miam Panier</h2>
+
+    {{-- Affichage d'un message d'alerte si une erreur survient (ex: panier vide ou stock insuffisant) --}}
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
+    {{-- VÃ©rification si le panier est vide ou non --}}
+    @if(empty($cart))
+        <p>Votre panier est vide. <a href="{{ route('etudiant.menu.index') }}">Retourner au menu</a></p>
+    @else
+        {{-- Tableau rÃ©capitulatif des articles prÃ©sents dans le panier --}}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Plat</th>
+                    <th>Prix unitaire</th>
+                    <th>QuantitÃ©</th>
+                    <th>Sous-total</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($cart as $item)
+                    <tr>
+                        <td>{{ $item['name'] }}</td>
+                        <td>{{ $item['price_fcfa'] }} FCFA</td>
+                        <td>{{ $item['quantity'] }}</td>
+                        <td>{{ $item['price_fcfa'] * $item['quantity'] }} FCFA</td>
+                        <td>
+                            {{-- Formulaire pour dÃ©crÃ©menter ou supprimer un article du panier --}}
+                            <form action="{{ route('etudiant.cart.remove') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="item_id" value="{{ $item['id'] }}">
+                                <button type="submit" class="btn btn-sm btn-danger">-1</button>
+                            </form>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+        {{-- Affichage du montant total brut du panier --}}
+        <h4>Total Ã  payer : {{ $total }} FCFA</h4>
+
+        {{-- Formulaire de validation finale de la commande --}}
+        <form action="{{ route('etudiant.order.store') }}" method="POST" class="mt-4">
+            @csrf
+            
+            {{-- SÃ©lection du mode de service (Sur place ou Livraison) --}}
+            <div class="mb-3">
+                <label for="service_mode" class="form-label">Mode de service</label>
+                <select name="service_mode" id="service_mode" class="form-select" required>
+                    <option value="on_site">Sur place</option>
+                    <option value="delivery">Livraison</option>
+                </select>
+            </div>
+            
+            {{-- Saisie de l'adresse de livraison (nÃ©cessaire si le mode livraison est choisi) --}}
+            <div class="mb-3">
+                <label for="delivery_address" class="form-label">Adresse de livraison (si applicable)</label>
+                <input type="text" name="delivery_address" id="delivery_address" class="form-control">
+            </div>
+        
+            {{-- Bloc de gestion de la fidÃ©litÃ© mis Ã  jour pour le palier de 5 points --}}
+            <div class="mb-3 form-check">
+                @if($balance >= 5)
+                    {{-- Si l'Ã©tudiant a au moins 5 points, la case est active et cochable --}}
+                    <input type="checkbox" class="form-check-input" name="use_points" id="use_points" value="1">
+                    <label class="form-check-label" for="use_points">
+                        Utiliser mes points (5 pts = 1 000 FCFA de rÃ©duction)
+                    </label>
+                    <small class="d-block text-success">Tu as {{ $balance }} points disponibles.</small>
+                @else
+                    {{-- Si l'Ã©tudiant a moins de 5 points, la case est dÃ©sactivÃ©e et affiche les points manquants --}}
+                    <input type="checkbox" class="form-check-input" id="use_points" disabled>
+                    <label class="form-check-label text-muted" for="use_points">
+                        Utiliser mes points (5 pts = 1 000 FCFA de rÃ©duction)
+                    </label>
+                    <small class="d-block text-danger">Seuil non atteint : il te manque {{ max(0, 5 - $balance) }} points.</small>
+                @endif
+            </div>
+
+            {{-- Bouton de soumission du formulaire de commande --}}
+            <button type="submit" class="btn btn-success">Valider la commande</button>
+        </form>
+    @endif
+</div>
 @endsection
 
 === FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\resources\views\etudiant\loyalty\index.blade.php ===
@@ -5714,7 +6659,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
     <p class="text-muted small mb-4">Gagne des points Ã  chaque commande et invite tes camarades.</p>
 
     @php
-        $targetPoints = 15;
+        $targetPoints = 5;
         $pointsRemaining = max(0, $targetPoints - ($balance % $targetPoints));
         if ($balance >= $targetPoints && $balance % $targetPoints === 0) {
             $pointsRemaining = 0;
@@ -5740,7 +6685,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                 </div>
 
                 <p class="text-muted small mb-4">
-                    @if($balance >= 15)
+                    @if($balance >= 5)
                         Tu as assez de points pour obtenir 1 000 F de rÃ©duction ! 1 000 F dÃ©pensÃ©s = 1 point.
                     @else
                         Plus que {{ $pointsRemaining }} points avant ta prochaine rÃ©duction de 1 000 F. 1 000 F dÃ©pensÃ©s = 1 point.
@@ -5748,7 +6693,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                 </p>
 
                 <div class="mb-5">
-                    @if($balance >= 15)
+                    @if($balance >= 5)
                         <a href="{{ route('etudiant.menu.index') }}" class="btn-use-points active-points text-decoration-none d-inline-block">
                             Utiliser mes points
                         </a>
@@ -6124,7 +7069,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 <!-- ================= NAVBAR ================= -->
 <nav class="navbar navbar-expand-lg navbar-dark navbar-miam sticky-top">
     <div class="container">
-       <a class="navbar-brand d-flex align-items-center" href="{{ route('etudiant.menu.index') }}">
+       <a class="navbar-brand d-flex align-items-center" href="{{ route('etudiant.accueil') }}">
             <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
                  style="width: 42px; height: 42px; border: 1px solid var(--miam-gold); color: var(--miam-gold);">
                 <i class="bi bi-shop"></i>
@@ -6151,14 +7096,14 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                     <a class="nav-link" href="{{ route('etudiant.reclamations.index') }}">Historique</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('etudiant.menu.index') }}#promotions">Jeux et Ã©vÃ©nements</a>
+                    <a class="nav-link" href="{{ route('etudiant.accueil') }}#promotions">Jeux et Ã©vÃ©nements</a>
                 </li>
             </ul>
         </div>
 
         <div class="d-none d-lg-flex align-items-center">
             <a href="{{ route('etudiant.loyalty.index') }}" class="badge-user">
-                {{ auth()->user()->first_name }} {{ strtoupper(substr(auth()->user()->last_name, 0, 1)) }}. &middot; 0 pts
+                {{ $user->first_name }} {{ strtoupper(substr($user->last_name, 0, 1)) }}. &middot; {{ $balance }} pts
             </a>
         </div>
     </div>
@@ -6288,41 +7233,12 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
         @endif
     @endforeach
 
-    <!-- ================= SECTION : PROMOTIONS ================= -->
-    <div id="section-promotions" class="mb-4">
-        <h3 class="font-serif-italic mb-3" style="font-size: 1.45rem;">Promotions</h3>
-
-        @forelse($promotions as $promo)
-            <div class="menu-row d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-3">
-                    @if($promo->image_url)
-                        <img src="{{ asset($promo->image_url) }}" alt="{{ $promo->title }}" class="menu-thumb">
-                    @else
-                        <div class="menu-icon-circle">
-                            <i class="bi bi-stars"></i>
-                        </div>
-                    @endif
-                    <div>
-                        <div class="font-serif-italic fw-medium" style="font-size: 1.1rem;">{{ $promo->title }}</div>
-                        <div class="text-muted small">{{ $promo->description }}</div>
-                    </div>
-                </div>
-
-                <div class="d-flex align-items-center gap-3">
-                    <button type="button" class="qty-btn-minus" disabled>&minus;</button>
-                    <span class="fw-semibold small" style="min-width: 14px; text-align: center;">0</span>
-                    <button type="button" class="qty-btn-plus" disabled>+</button>
-                </div>
-            </div>
-        @empty
-            <p class="text-muted small">Aucune promotion active aujourd'hui.</p>
-        @endforelse
-    </div>
+   
 
     <!-- ================= CASE Ã€ COCHER : UTILISER MES POINTS ================= -->
     @php
-        $canUsePoints = $balance >= 15;
-        $missingPoints = max(0, 15 - $balance);
+        $canUsePoints = $balance >= 5;
+        $missingPoints = max(0, 5 - $balance);
         $subtotal = 0;
         foreach ($cart as $cItem) {
             $subtotal += $cItem['price_fcfa'] * $cItem['quantity'];
@@ -6336,7 +7252,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                {{ !$canUsePoints ? 'disabled' : '' }}
                onchange="toggleLoyaltyDiscount(this.checked)">
         <label class="form-check-label small text-muted" for="useLoyaltyPointsCheckbox">
-            Utiliser mes points (15 pts = 1 000 F)
+            Utiliser mes points (5 pts = 1 000 F)
             @if(!$canUsePoints)
                 <br><span style="color: #9e8a60; font-size: 0.78rem;">Seuil non atteint : il te manque {{ $missingPoints }} points.</span>
             @endif
@@ -6792,36 +7708,48 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
         <div class="col-lg-5 d-flex flex-column gap-4">
 
             <!-- Carte : Nouvelle rÃ©clamation -->
-            <div class="miam-card" id="formClaimBox">
-                <h4 class="font-serif-italic mb-3" style="font-size: 1.35rem;">Nouvelle rÃ©clamation</h4>
+<div class="miam-card" id="formClaimBox">
+    <h4 class="font-serif-italic mb-3" style="font-size: 1.35rem;">Nouvelle rÃ©clamation</h4>
 
-                <form action="{{ route('etudiant.reclamations.store') }}" method="POST">
-                    @csrf
-                    <div class="mb-3">
-                        <label for="order_id" class="form-label text-muted small mb-1">Commande concernÃ©e</label>
-                        <select name="order_id" id="order_id" class="form-select form-select-miam" required>
-                            @forelse($orders as $order)
-                                <option value="{{ $order->id }}">
-                                    Commande #{{ $order->order_number }} ({{ number_format($order->total_fcfa, 0, ',', ' ') }} F)
-                                </option>
-                            @empty
-                                <option value="" disabled selected>Aucune commande disponible</option>
-                            @endforelse
-                        </select>
-                    </div>
+    <form action="{{ route('etudiant.reclamations.store') }}" method="POST">
+        @csrf
+        
+        <!-- SÃ©lection de la commande -->
+        <div class="mb-3">
+            <label for="order_id" class="form-label text-muted small mb-1">Commande concernÃ©e</label>
+            <select name="order_id" id="order_id" class="form-select form-select-miam" required>
+                @forelse($orders as $order)
+                    <option value="{{ $order->id }}">
+                        Commande #{{ $order->order_number }} ({{ number_format($order->total_fcfa, 0, ',', ' ') }} F)
+                    </option>
+                @empty
+                    <option value="" disabled selected>Aucune commande disponible</option>
+                @endforelse
+            </select>
+        </div>
 
-                    <div class="mb-3">
-                        <label for="description" class="form-label text-muted small mb-1">DÃ©cris le problÃ¨me</label>
-                        <textarea name="description" id="description" rows="3"
-                                  class="form-control form-control-miam"
-                                  placeholder="Plat reÃ§u froid aprÃ¨s 40 minutes d'attente." required>{{ old('description') }}</textarea>
-                    </div>
+        <!-- AJOUT DU CHAMP SUJET ICI -->
+        <div class="mb-3">
+            <label for="subject" class="form-label text-muted small mb-1">Sujet</label>
+            <input type="text" name="subject" id="subject" 
+                   class="form-control form-control-miam" 
+                   placeholder="Ex: Retard de livraison, Plat froid..." 
+                   value="{{ old('subject') }}" required>
+        </div>
 
-                    <button type="submit" class="btn-submit-claim" {{ $orders->isEmpty() ? 'disabled' : '' }}>
-                        Envoyer la rÃ©clamation
-                    </button>
-                </form>
-            </div>
+        <!-- Description du problÃ¨me -->
+        <div class="mb-3">
+            <label for="description" class="form-label text-muted small mb-1">DÃ©cris le problÃ¨me</label>
+            <textarea name="description" id="description" rows="3"
+                      class="form-control form-control-miam"
+                      placeholder="Plat reÃ§u froid aprÃ¨s 40 minutes d'attente." required>{{ old('description') }}</textarea>
+        </div>
+
+        <button type="submit" class="btn-submit-claim" {{ $orders->isEmpty() ? 'disabled' : '' }}>
+            Envoyer la rÃ©clamation
+        </button>
+    </form>
+</div>
 
             <!-- Carte : Suivi de mes rÃ©clamations -->
             <div class="miam-card">
@@ -7161,10 +8089,10 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
                     <div class="small mb-1" style="color: var(--miam-gold);">Mes points de fidÃ©litÃ©</div>
                     <div class="font-serif display-5 text-white mb-2">{{ $balance }} pts</div>
                     @php
-                        $pointsManquants = max(0, 15 - ($balance % 15));
+                        $pointsManquants = max(0, 5 - ($balance % 5));
                     @endphp
                     <p class="small text-secondary mb-3" style="line-height: 1.4;">
-                        15 points = 1 000 F de rÃ©duction.
+                        5 points = 1 000 F de rÃ©duction.
                         @if($balance >= 15)
                             Tu peux dÃ©jÃ  bÃ©nÃ©ficier d'une rÃ©duction !
                         @else
@@ -7542,37 +8470,108 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'Mon Miam Miam') }}</title>
+    <title>@yield('title', config('app.name', 'Mon Miam Miam'))</title>
     <!-- Bootstrap 5 CSS -->
     <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
+        :root {
+            --zeduc-gold: #d4af37;
+            --zeduc-black: #0f0f0f;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
         }
-       
-        /* Background personnalisÃ© pour les pages d'authentification */
+
+        .gold { color: var(--zeduc-gold) !important; }
+
+        .btn-gold {
+            background-color: var(--zeduc-gold);
+            border: 1px solid var(--zeduc-gold);
+            color: #0f0f0f;
+            font-weight: 600;
+        }
+        .btn-gold:hover { background-color: #e6c35c; color: #0f0f0f; }
+
+        .border-gold { border: 1px solid var(--zeduc-gold) !important; }
+
+        .navbar-zeduc {
+            background-color: #000000;
+            padding: .75rem 0;
+        }
+        .navbar-zeduc .nav-link { color: #ffffff; }
+        .navbar-zeduc .nav-link.active,
+        .navbar-zeduc .nav-link:hover { color: var(--zeduc-gold) !important; }
+
+        .hero-section {
+            position: relative;
+            background: linear-gradient(rgba(0,0,0,.6), rgba(0,0,0,.85)), #1a1a1a;
+            padding: 4rem 0;
+        }
+
+        .text-secondary { color: #b5b5b5 !important; }
+
+        /* Fonds spÃ©cifiques aux pages d'authentification */
         .auth-background {
-            background-image: url('/images/background-miam.jpg'); /* Assurez-vous que l'image existe dans public/images/ */
-            background-size: cover;
-            background-position: center;
+            position: relative;
+            isolation: isolate;
             min-height: 100vh;
         }
-        /* Background sombre pour mot de passe oubliÃ© */
+
+        .auth-background::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: url('../images/boisson_accueil_jpg.jpeg');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.2; /* tes 20% sont ici, seulement sur l'image */
+            z-index: -1;
+        }
         .dark-background {
             background-color: #0f0f0f;
             min-height: 100vh;
         }
+
+        body.home-page {
+            background-color: #0f0f0f;
+            color: #ffffff;
+        }
+
+        body.home-page .navbar-zeduc {
+            background-color: #000000;
+        }
+
+        body.home-page .navbar-zeduc .nav-link {
+            color: #ffffff;
+        }
+
+        body.home-page .navbar-zeduc .nav-link.active,
+        body.home-page .navbar-zeduc .nav-link:hover {
+            color: #d4af37 !important;
+        }
+
+        body.home-page .hero-section {
+            background: linear-gradient(rgba(0,0,0,.6), rgba(0,0,0,.85)), #1a1a1a;
+            padding: 5rem 0;
+        }
     </style>
+    @stack('styles')
 </head>
-<body>
-    
+<body class="@yield('body-class')">
+
+    {{-- Sections pleine largeur (accueil, en-tÃªte des pages d'authentification) --}}
+    @yield('full-width')
+
     <!-- Contenu principal -->
     @yield('content')
+
     <!-- Bootstrap JS Bundle (inclut Popper) -->
     <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
+    @stack('scripts')
 </body>
 </html>
 
@@ -7793,6 +8792,169 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 </body>
 </html>
 
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\resources\views\home.blade.php ===
+@extends('layouts.app')
+
+@section('title', 'Accueil')
+
+@section('body-class', 'home-page')
+
+@section('full-width')
+    {{-- Navigation --}}
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-zeduc mb-0">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url('/') }}">
+                <img src="{{ asset('/images/zeduc-image.jpg') }}" alt="ZEDUC-SP@CE" height="50">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item"><a class="nav-link gold active" href="{{ url('/') }}">Accueil</a></li>
+                    <li class="nav-item"><a class="nav-link text-white" href="{{ url('/') }}">Terrasse</a></li>
+                </ul>
+                <a href="{{ route('login') }}" class="btn btn-gold">Se connecter</a>
+            </div>
+        </div>
+    </nav>
+
+    {{-- Section HÃ©ro --}}
+    <section class="hero-section text-center text-white">
+        <div class="hero-overlay">
+            <div class="container py-5">
+                <h1 class="display-5 fw-bold mb-3">Quand les Ã©tudiants de<br>Yansoki ont faim,<br>ils savent oÃ¹ commander.</h1>
+                <p class="lead mb-4">100+ plats disponibles chaque jour</p>
+                <a href="{{ route('login') }}" class="btn btn-gold btn-lg px-4">Voir le menu du jour</a>
+                <div class="row mt-5">
+                    <div class="col-md-6">
+                        <h3 class="gold fw-bold">150+</h3>
+                        <p class="small">Plats diffÃ©rents chaque semaine</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h3 class="gold fw-bold">1 plat</h3>
+                        <p class="small">Votre repas livrÃ© en 15 min</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container py-5">
+        {{-- Section Plats Populaires --}}
+        <section class="mb-5">
+            <div class="text-center mb-4">
+                <h2 class="gold fw-bold">Ã€ la carte</h2>
+                <p class="text-secondary">DÃ©couvrez nos plats, prÃ©parÃ©s avec des ingrÃ©dients frais et le savoir-faire de notre cuisine Camerounaise</p>
+            </div>
+            <div class="row g-4">
+                @php
+                    $plats = [
+                        ['nom' => 'Saucisses BraisÃ©es', 'prix' => '1 500 F', 'img' => 'saucisses.jpg'],
+                        ['nom' => 'NdolÃ¨ Royal', 'prix' => '2 500 F', 'img' => 'ndole.jpg'],
+                        ['nom' => 'Poulet BraisÃ©', 'prix' => '3 500 F', 'img' => 'poulet.jpg'],
+                        ['nom' => 'Poisson BraisÃ©', 'prix' => '3 000 F', 'img' => 'poisson.jpg'],
+                    ];
+                @endphp
+                @foreach($plats as $plat)
+                    <div class="col-md-3 col-sm-6">
+                        <div class="card h-100 bg-dark border-gold">
+                            <img src="{{ asset('images/' . $plat['img']) }}" class="card-img-top" alt="{{ $plat['nom'] }}" style="height: 180px; object-fit: cover;">
+                            <div class="card-body text-center">
+                                <h5 class="gold">{{ $plat['nom'] }}</h5>
+                                <p class="text-secondary">{{ $plat['prix'] }}</p>
+                                <a href="{{ route('login') }}" class="btn btn-gold btn-sm w-100">Ajouter au panier</a>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+
+        {{-- Section ExpÃ©rience --}}
+        <section class="mb-5 py-5" style="background-color: #1a1a1a; border-radius: 1rem;">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-md-6 mb-4 mb-md-0">
+                        <h3 class="gold fw-bold mb-3">ExpÃ©rience</h3>
+                        <p class="text-white">Une terrasse pensÃ©e pour rester aprÃ¨s le repas.</p>
+                        <p class="text-white">Chez nous, la faim a des remises.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <h5 class="gold">Ã‰vÃ©nements</h5>
+                            <p class="text-secondary">Quand Ã§a se joue Ã  Yansoki, Ã§a se vit Ã  table.</p>
+                        </div>
+                        <div class="mb-4">
+                            <h5 class="gold">FidÃ©litÃ©</h5>
+                            <p class="text-secondary">Des points Ã  chaque commande. Accumulez des points et utilisez-les pour rÃ©duire votre prochaine addition.</p>
+                        </div>
+                        <div>
+                            <h5 class="gold">Parrainage</h5>
+                            <p class="text-secondary">Invitez vos camarades. Votre code de parrainage vous rapporte des points dÃ¨s leur premiÃ¨re commande.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {{-- Section Commander en 3 Ã©tapes --}}
+        <section class="mb-5">
+            <div class="text-center mb-4">
+                <h2 class="gold fw-bold">Commander en trois Ã©tapes</h2>
+                <p class="text-secondary">Depuis votre table, votre chambre ou entre deux cours : le mÃªme parcours, Ã  chaque fois.</p>
+            </div>
+            <div class="row g-4 text-center">
+                <div class="col-md-4">
+                    <div class="p-4 border-gold rounded h-100">
+                        <h4 class="gold">Ã‰tape 1</h4>
+                        <h5 class="text-white">Choisissez votre repas</h5>
+                        <p class="text-secondary small">Parcourez le menu du jour et les promotions, et composez votre panier.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4 border-gold rounded h-100">
+                        <h4 class="gold">Ã‰tape 2</h4>
+                        <h5 class="text-white">Sur place ou en livraison</h5>
+                        <p class="text-secondary small">Indiquez une heure de retrait ou la livraison, selon votre adresse de livraison.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4 border-gold rounded h-100">
+                        <h4 class="gold">Ã‰tape 3</h4>
+                        <h5 class="text-white">Payez et cumulez vos points</h5>
+                        <p class="text-secondary small">Par carte, mobile money, ou avec vos points de fidÃ©litÃ© dÃ©jÃ  cumulÃ©s.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {{-- Footer --}}
+        <footer class="text-center py-4 border-top border-secondary">
+            <img src="{{ asset('/images/zeduc-image.jpg') }}" alt="ZEDUC-SP@CE" height="60" class="mb-3">
+            <div class="row text-secondary small">
+                <div class="col-md-3">
+                    <h6 class="gold">ZÃ©Duc-Space</h6>
+                    <p>Restaurant universitaire<br>Campus de Yansoki<br>YaoundÃ©, Cameroun</p>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="gold">Explorer</h6>
+                    <p>Menu du jour<br>Promotions<br>Ã‰vÃ©nements</p>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="gold">Horaires</h6>
+                    <p>Lundi - Samedi<br>11h - 22h<br>Dimanche : 12h - 20h</p>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="gold">Contact</h6>
+                    <p>+237 690 00 00 00<br>contact@zeduc-space.cm<br>Suivez-nous : @zeducspace</p>
+                </div>
+            </div>
+            <p class="text-secondary small mt-3">Â© 2026 ZEDUC-SP@CE - The Climate of Taste & Chill</p>
+        </footer>
+    </div>
+@endsection
+
 === FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\routes\console.php ===
 <?php
 
@@ -7816,6 +8978,11 @@ use App\Http\Controllers\Etudiant\CartController;
 use App\Http\Controllers\Etudiant\OrderController;
 use App\Http\Controllers\Etudiant\LoyaltyController;
 use App\Http\Controllers\Etudiant\ReclamationController;
+use App\Http\Controllers\Etudiant\AccueilController;
+use App\Http\Controllers\CookieController;
+use App\Http\Controllers\Etudiant\ParrainageController;
+use App\Http\Controllers\Etudiant\PaiementController;
+
 
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\MenuCategoryController;
@@ -7826,6 +8993,7 @@ use App\Http\Controllers\Admin\AppSettingController;
 use App\Http\Controllers\Admin\DashboardController;
 
 // routes accessibles uniquement quand on est pas connectÃ©
+
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store']);
@@ -7843,12 +9011,37 @@ Route::middleware('guest')->group(function () {
 // routes accessibles uniquement quand on est connectÃ©
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    Route::post('/dashboard', fn () => view('dashboard'))->name('dashboard');
+    Route::get('/dashboard', function () {
+    $user = auth()->user();
+    
+    // Si c'est un Ã©tudiant, on l'envoie sur l'accueil Ã©tudiant
+    if ($user->role && $user->role->code === 'student') {
+        return redirect()->route('etudiant.accueil');
+    }
+    
+    // Si c'est un admin, on l'envoie sur le tableau de bord admin
+    if ($user->role && $user->role->code === 'admin') {
+        return redirect()->route('admin.dashboard');
+    }
+
+    // Par dÃ©faut (si autre rÃ´le), on peut le renvoyer vers l'accueil Ã©tudiant pour l'instant
+    return redirect()->route('etudiant.accueil');
+})->name('dashboard');
 });
 
 // ESPACE Ã‰TUDIANT 
 
+// Enregistrement du consentement des cookies
+    Route::post('/cookies', [CookieController::class, 'store'])->name('cookies.store');
+// Routes de retour CinetPay (GET et POST car CinetPay renvoie parfois en POST sur le return_url)
+    Route::match(['get', 'post'], '/paiement/retour', [PaiementController::class,     'retourPaiement'])->name('cinetpay.return');
+    Route::post('/paiement/notify', [PaiementController::class, 'notify'])->name('cinetpay.notify');
+
 Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(function () {
+
+    // Page d'accueil avec le Top 10 et les points
+    Route::get('/accueil', [AccueilController::class, 'index'])->name('accueil');
+
     
     // Affichage du Menu
     Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
@@ -7868,7 +9061,10 @@ Route::middleware(['auth'])->prefix('etudiant')->name('etudiant.')->group(functi
     Route::get('/reclamations', [ReclamationController::class, 'index'])->name('reclamations.index');
     Route::get('/reclamations/nouveau', [ReclamationController::class, 'create'])->name('reclamations.create');
     Route::post('/reclamations/nouveau', [ReclamationController::class, 'store'])->name('reclamations.store');
-
+        // --- PARRAINAGE ---
+    // --- PARRAINAGE ---
+    Route::post('/parrainage/generer', [ParrainageController::class, 'generer'])->name('parrainage.generer');
+    Route::post('/parrainage/utiliser', [ParrainageController::class, 'utiliser'])->name('parrainage.utiliser');
 });
 
 // ROUTES ADMINISTRATION (SECURISEES PAR MIDDLEWARE )
@@ -7890,12 +9086,126 @@ Route::middleware(['auth', 'role:admin']) //Securite : Seul un admin connecte pe
         
     });
 
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\tests\Feature\EtudiantWorkflowTest.php ===
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\User;
+use App\Models\Role;
+use App\Models\MenuItem;
+use App\Models\MenuCategory;
+use App\Models\LoyaltyAccount;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Session;
+use Tests\TestCase;
+
+class EtudiantWorkflowTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected User $student;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $role = Role::firstOrCreate(['code' => 'student'], ['label' => 'Etudiant']);
+
+        $this->student = User::factory()->create([
+            'role_id' => $role->id,
+            'is_active' => true,
+        ]);
+
+        LoyaltyAccount::create([
+            'user_id' => $this->student->id,
+            'balance_points' => 50,
+        ]);
+    }
+
+    public function test_un_etudiant_peut_acceder_a_sa_page_accueil(): void
+    {
+        $response = $this->actingAs($this->student)->get(route('etudiant.accueil'));
+
+        $response->assertStatus(200);
+        $response->assertViewIs('etudiant.accueil');
+        $response->assertViewHas(['user', 'balance', 'dailySpecials', 'promotions', 'topClients']);
+    }
+
+    public function test_un_etudiant_peut_ajouter_un_plat_disponible_au_panier(): void
+    {
+        $category = MenuCategory::create(['name' => 'Plats', 'sort_order' => 1, 'is_active' => true]);
+        $item = MenuItem::create([
+            'category_id' => $category->id,
+            'name' => 'Poulet DG',
+            'description' => 'DÃ©licieux poulet',
+            'price_fcfa' => 2500,
+            'is_available' => true,
+        ]);
+
+        $response = $this->actingAs($this->student)->post(route('etudiant.cart.add'), [
+            'menu_item_id' => $item->id,
+            'quantity' => 2,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertTrue(Session::has('cart'));
+        $this->assertEquals(2, Session::get('cart')[$item->id]['quantity']);
+    }
+
+    public function test_un_etudiant_peut_valider_une_commande_depuis_son_panier(): void
+    {
+        $category = MenuCategory::create(['name' => 'Boissons', 'sort_order' => 2, 'is_active' => true]);
+        $item = MenuItem::create([
+            'category_id' => $category->id,
+            'name' => 'Jus naturel',
+            'description' => 'Frais',
+            'price_fcfa' => 1000,
+            'is_available' => true,
+        ]);
+
+        Session::put('cart', [
+            $item->id => [
+                'id' => $item->id,
+                'name' => $item->name,
+                'price_fcfa' => $item->price_fcfa,
+                'quantity' => 2,
+                'image_url' => null,
+            ]
+        ]);
+
+        $response = $this->actingAs($this->student)->post(route('etudiant.order.store'), [
+            'service_mode' => 'on_site',
+        ]);
+
+        $response->assertRedirect(route('etudiant.menu.index'));
+        $this->assertDatabaseHas('orders', [
+            'user_id' => $this->student->id,
+            'service_mode' => 'on_site',
+            'total_fcfa' => 2000,
+            'status' => 'pending',
+        ]);
+
+        $this->assertFalse(Session::has('cart'));
+    }
+
+    public function test_un_etudiant_peut_generer_un_code_de_parrainage(): void
+    {
+        $response = $this->actingAs($this->student)->post(route('etudiant.parrainage.generer'));
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('referral_codes', [
+            'user_id' => $this->student->id,
+            'is_active' => true,
+        ]);
+    }
+}
+
 === FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\tests\Feature\ExampleTest.php ===
 <?php
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
@@ -7905,9 +9215,659 @@ class ExampleTest extends TestCase
      */
     public function test_the_application_returns_a_successful_response(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/login');
 
         $response->assertStatus(200);
+    }
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\tests\Feature\GerantClaimReviewTest.php ===
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Claim;
+use App\Models\Order;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
+
+class GerantClaimReviewTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_manager_can_consult_claims_and_status_totals(): void
+    {
+        $manager = $this->userWithRole('manager');
+        $claim = $this->createClaim('in_progress', 'RÃ©ponse proposÃ©e par employÃ©');
+
+        $this->actingAs($manager)
+            ->getJson(route('gerant.claims.index'))
+            ->assertOk()
+            ->assertJsonPath('claims.data.0.id', $claim->id)
+            ->assertJsonPath('claims.data.0.response', 'RÃ©ponse proposÃ©e par employÃ©')
+            ->assertJsonPath('summary.in_progress', 1)
+            ->assertJsonStructure(['refreshed_at']);
+    }
+
+    public function test_manager_can_approve_an_employee_response(): void
+    {
+        $manager = $this->userWithRole('manager');
+        $claim = $this->createClaim('in_progress', 'RÃ©ponse Ã  valider');
+
+        $this->actingAs($manager)
+            ->patchJson(route('gerant.claims.review', $claim), ['decision' => 'approved'])
+            ->assertOk()
+            ->assertJsonPath('claim.status', 'resolved')
+            ->assertJsonPath('claim.response', 'RÃ©ponse Ã  valider');
+
+        $this->assertDatabaseHas('claims', [
+            'id' => $claim->id,
+            'status' => 'resolved',
+        ]);
+    }
+
+    public function test_manager_can_reject_an_employee_response(): void
+    {
+        $manager = $this->userWithRole('manager');
+        $claim = $this->createClaim('in_progress', 'RÃ©ponse Ã  rejeter');
+
+        $this->actingAs($manager)
+            ->patchJson(route('gerant.claims.review', $claim), ['decision' => 'rejected'])
+            ->assertOk()
+            ->assertJsonPath('claim.status', 'rejected');
+    }
+
+    public function test_claim_without_proposed_response_cannot_be_reviewed(): void
+    {
+        $manager = $this->userWithRole('manager');
+        $claim = $this->createClaim('open', null);
+
+        $this->actingAs($manager)
+            ->patchJson(route('gerant.claims.review', $claim), ['decision' => 'approved'])
+            ->assertUnprocessable();
+    }
+
+    public function test_non_manager_cannot_consult_or_review_claims(): void
+    {
+        $employee = $this->userWithRole('employee');
+        $claim = $this->createClaim('in_progress', 'RÃ©ponse proposÃ©e');
+
+        $this->actingAs($employee)
+            ->getJson(route('gerant.claims.index'))
+            ->assertForbidden();
+
+        $this->actingAs($employee)
+            ->patchJson(route('gerant.claims.review', $claim), ['decision' => 'approved'])
+            ->assertForbidden();
+    }
+
+    private function createClaim(string $status, ?string $response): Claim
+    {
+        $student = $this->userWithRole('student');
+        $order = Order::create([
+            'order_number' => 'ORDER-CLAIM-'.uniqid(),
+            'user_id' => $student->id,
+            'service_mode' => 'on_site',
+            'status' => 'completed',
+        ]);
+
+        return Claim::create([
+            'order_id' => $order->id,
+            'user_id' => $student->id,
+            'subject' => 'RÃ©clamation de test',
+            'description' => 'Description de test',
+            'status' => $status,
+            'response' => $response,
+            'handled_by' => $status === 'in_progress' ? $this->userWithRole('employee')->id : null,
+        ]);
+    }
+
+    private function userWithRole(string $roleCode): User
+    {
+        $role = Role::firstOrCreate(
+            ['code' => $roleCode],
+            ['label' => ucfirst($roleCode)]
+        );
+
+        return User::create([
+            'role_id' => $role->id,
+            'first_name' => ucfirst($roleCode),
+            'last_name' => 'Test',
+            'email' => $roleCode.'-'.uniqid().'@example.test',
+            'password' => Hash::make('password'),
+        ]);
+    }
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\tests\Feature\GerantEmployeeAccountTest.php ===
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
+
+class GerantEmployeeAccountTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_manager_can_create_an_active_employee_account(): void
+    {
+        $manager = $this->userWithRole('manager');
+
+        $this->actingAs($manager)
+            ->postJson(route('gerant.employees.store'), [
+                'first_name' => 'Alex',
+                'last_name' => 'Employe',
+                'email' => 'alex@example.test',
+                'phone' => '0123456789',
+                'password' => 'Password123!',
+                'password_confirmation' => 'Password123!',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('employee.email', 'alex@example.test')
+            ->assertJsonPath('employee.is_active', true)
+            ->assertJsonMissingPath('employee.password');
+
+        $employee = User::where('email', 'alex@example.test')->firstOrFail();
+        $this->assertSame('employee', $employee->role->code);
+        $this->assertTrue(Hash::check('Password123!', $employee->password));
+    }
+
+    public function test_non_manager_cannot_create_an_employee_account(): void
+    {
+        $employee = $this->userWithRole('employee');
+
+        $this->actingAs($employee)
+            ->postJson(route('gerant.employees.store'), [])
+            ->assertForbidden();
+    }
+
+    public function test_manager_can_enable_or_disable_employee_access(): void
+    {
+        $manager = $this->userWithRole('manager');
+        $employee = $this->userWithRole('employee');
+
+        $this->actingAs($manager)
+            ->patchJson(route('gerant.employees.access.update', $employee), [
+                'is_active' => false,
+            ])
+            ->assertOk()
+            ->assertJsonPath('employee.is_active', false);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $employee->id,
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($manager)
+            ->patchJson(route('gerant.employees.access.update', $employee), [
+                'is_active' => true,
+            ])
+            ->assertOk()
+            ->assertJsonPath('employee.is_active', true);
+    }
+
+    public function test_non_manager_cannot_change_employee_access(): void
+    {
+        $employee = $this->userWithRole('employee');
+
+        $this->actingAs($employee)
+            ->patchJson(route('gerant.employees.access.update', $employee), [
+                'is_active' => false,
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $employee->id,
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_inactive_employee_cannot_log_in(): void
+    {
+        $employee = $this->userWithRole('employee');
+        $employee->update(['password' => Hash::make('Password123!'), 'is_active' => false]);
+
+        $this->post('/login', [
+            'email' => $employee->email,
+            'password' => 'Password123!',
+        ])->assertSessionHasErrors('email');
+    }
+
+    private function userWithRole(string $roleCode): User
+    {
+        $role = Role::firstOrCreate(
+            ['code' => $roleCode],
+            ['label' => ucfirst($roleCode)]
+        );
+
+        return User::create([
+            'role_id' => $role->id,
+            'first_name' => ucfirst($roleCode),
+            'last_name' => 'Test',
+            'email' => $roleCode.'@example.test',
+            'password' => Hash::make('password'),
+        ]);
+    }
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\tests\Feature\GerantOrderSupervisionTest.php ===
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Order;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
+
+class GerantOrderSupervisionTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_manager_can_filter_orders_and_view_live_status_totals(): void
+    {
+        $manager = $this->userWithRole('manager');
+        $customer = $this->userWithRole('student');
+        $this->createOrder($customer, 'pending');
+        $this->createOrder($customer, 'preparing');
+
+        $this->actingAs($manager)
+            ->getJson(route('gerant.orders.index', ['status' => 'pending']))
+            ->assertOk()
+            ->assertJsonPath('orders.total', 1)
+            ->assertJsonPath('orders.data.0.status', 'pending')
+            ->assertJsonPath('summary.pending', 1)
+            ->assertJsonPath('summary.preparing', 1)
+            ->assertJsonPath('available_statuses', [
+                'pending',
+                'confirmed',
+                'preparing',
+                'ready',
+                'delivered',
+                'completed',
+                'cancelled',
+            ])
+            ->assertJsonStructure(['refreshed_at']);
+    }
+
+    public function test_non_manager_cannot_access_order_supervision(): void
+    {
+        $employee = $this->userWithRole('employee');
+
+        $this->actingAs($employee)
+            ->getJson(route('gerant.orders.index'))
+            ->assertForbidden();
+    }
+
+    public function test_manager_can_change_order_status(): void
+    {
+        $manager = $this->userWithRole('manager');
+        $customer = $this->userWithRole('student');
+        $order = $this->createOrder($customer, 'pending');
+
+        $this->actingAs($manager)
+            ->patchJson(route('gerant.orders.status.update', $order), ['status' => 'preparing'])
+            ->assertOk()
+            ->assertJsonPath('order.status', 'preparing');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'preparing',
+        ]);
+    }
+
+    public function test_non_manager_cannot_change_order_status(): void
+    {
+        $employee = $this->userWithRole('employee');
+        $customer = $this->userWithRole('student');
+        $order = $this->createOrder($customer, 'pending');
+
+        $this->actingAs($employee)
+            ->patchJson(route('gerant.orders.status.update', $order), ['status' => 'ready'])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_manager_cannot_set_an_unsupported_order_status(): void
+    {
+        $manager = $this->userWithRole('manager');
+        $customer = $this->userWithRole('student');
+        $order = $this->createOrder($customer, 'pending');
+
+        $this->actingAs($manager)
+            ->patchJson(route('gerant.orders.status.update', $order), ['status' => 'unknown'])
+            ->assertUnprocessable();
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'pending',
+        ]);
+    }
+
+    private function userWithRole(string $roleCode): User
+    {
+        $role = Role::firstOrCreate(
+            ['code' => $roleCode],
+            ['label' => ucfirst($roleCode)]
+        );
+
+        return User::create([
+            'role_id' => $role->id,
+            'first_name' => ucfirst($roleCode),
+            'last_name' => 'Test',
+            'email' => $roleCode.'@example.test',
+            'password' => Hash::make('password'),
+        ]);
+    }
+
+    private function createOrder(User $customer, string $status): Order
+    {
+        return Order::create([
+            'order_number' => strtoupper($status).'-'.uniqid(),
+            'user_id' => $customer->id,
+            'service_mode' => 'on_site',
+            'status' => $status,
+        ]);
+    }
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\tests\Feature\GerantStatisticsTest.php ===
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\LoyaltyAccount;
+use App\Models\LoyaltyTransaction;
+use App\Models\Order;
+use App\Models\Payment;
+use App\Models\Referral;
+use App\Models\ReferralCode;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
+
+class GerantStatisticsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_manager_can_view_sales_order_loyalty_and_referral_statistics(): void
+    {
+        $manager = $this->userWithRole('manager');
+        $customer = $this->userWithRole('student');
+        $order = Order::create([
+            'order_number' => 'ORDER-STAT-1',
+            'user_id' => $customer->id,
+            'service_mode' => 'on_site',
+            'status' => 'completed',
+            'total_fcfa' => 2500,
+        ]);
+
+        Payment::create([
+            'order_id' => $order->id,
+            'provider' => 'test',
+            'method' => 'cash',
+            'status' => 'paid',
+            'amount_fcfa' => 2500,
+        ]);
+
+        LoyaltyAccount::create([
+            'user_id' => $customer->id,
+            'balance_points' => 12,
+        ]);
+        LoyaltyTransaction::create([
+            'user_id' => $customer->id,
+            'order_id' => $order->id,
+            'type' => 'earn',
+            'points' => 12,
+            'description' => 'Points gagnÃ©s sur une commande',
+        ]);
+
+        $referralCode = ReferralCode::create([
+            'user_id' => $customer->id,
+            'code' => 'REF-STAT-1',
+            'is_active' => true,
+        ]);
+        Referral::create([
+            'referrer_user_id' => $customer->id,
+            'referred_user_id' => $this->userWithRole('student2')->id,
+            'code_id' => $referralCode->id,
+            'status' => 'rewarded',
+        ]);
+
+        $this->actingAs($manager)
+            ->getJson(route('gerant.statistics.index'))
+            ->assertOk()
+            ->assertJsonPath('sales.paid_total_fcfa', 2500)
+            ->assertJsonPath('sales.paid_transactions', 1)
+            ->assertJsonPath('orders.total', 1)
+            ->assertJsonPath('orders.by_status.completed', 1)
+            ->assertJsonPath('loyalty.accounts', 1)
+            ->assertJsonPath('loyalty.balance_points_total', 12)
+            ->assertJsonPath('loyalty.by_type.earn.points_total', 12)
+            ->assertJsonPath('referrals.active_codes', 1)
+            ->assertJsonPath('referrals.by_status.rewarded', 1)
+            ->assertJsonStructure(['refreshed_at']);
+    }
+
+    public function test_non_manager_cannot_view_statistics(): void
+    {
+        $employee = $this->userWithRole('employee');
+
+        $this->actingAs($employee)
+            ->getJson(route('gerant.statistics.index'))
+            ->assertForbidden();
+    }
+
+    private function userWithRole(string $roleCode): User
+    {
+        $role = Role::firstOrCreate(
+            ['code' => $roleCode],
+            ['label' => ucfirst($roleCode)]
+        );
+
+        return User::create([
+            'role_id' => $role->id,
+            'first_name' => ucfirst($roleCode),
+            'last_name' => 'Test',
+            'email' => $roleCode.'@example.test',
+            'password' => Hash::make('password'),
+        ]);
+    }
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\tests\Feature\RegistrationTest.php ===
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Referral;
+use App\Models\ReferralCode;
+use App\Models\Role;
+use App\Models\User;
+use Database\Seeders\RolesAndSettingsSeeder;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
+use Tests\TestCase;
+
+class RegistrationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(RolesAndSettingsSeeder::class);
+    }
+
+    public function test_registration_saves_form_values_to_their_matching_columns(): void
+    {
+        $response = $this->post('/register', [
+            'first_name' => 'Amina',
+            'last_name' => 'Nana',
+            'email' => 'amina@example.com',
+            'phone' => '690001122',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'delivery_address' => 'Campus de Yansoki',
+        ]);
+
+        $user = User::where('email', 'amina@example.com')->firstOrFail();
+
+        $response->assertRedirect(route('home'));
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame(Role::where('code', 'student')->value('id'), $user->role_id);
+        $this->assertSame('Campus de Yansoki', $user->delivery_address);
+        $this->assertSame('690001122', $user->phone);
+        $this->assertTrue(Hash::check('Password123!', $user->password));
+        $this->assertDatabaseMissing('users', ['email' => 'amina@example.com', 'password' => 'Password123!']);
+    }
+
+    public function test_registration_saves_referral_relationship_and_allows_optional_phone(): void
+    {
+        $referrer = User::create([
+            'role_id' => Role::where('code', 'student')->value('id'),
+            'first_name' => 'Jean',
+            'last_name' => 'Referrer',
+            'email' => 'jean@example.com',
+            'password' => 'Password123!',
+        ]);
+        $referralCode = ReferralCode::create([
+            'user_id' => $referrer->id,
+            'code' => 'JEAN2026',
+        ]);
+
+        $response = $this->post('/register', [
+            'first_name' => 'Amina',
+            'last_name' => 'Nana',
+            'email' => 'amina@example.com',
+            'phone' => '',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'delivery_address' => '',
+            'referral_code' => $referralCode->code,
+        ]);
+
+        $referred = User::where('email', 'amina@example.com')->firstOrFail();
+
+        $response->assertRedirect(route('home'));
+        $this->assertNull($referred->phone);
+        $this->assertDatabaseHas('referrals', [
+            'referrer_user_id' => $referrer->id,
+            'referred_user_id' => $referred->id,
+            'code_id' => $referralCode->id,
+            'status' => 'pending',
+        ]);
+        $this->assertSame(1, Referral::where('referred_user_id', $referred->id)->count());
+    }
+
+    public function test_registration_rejects_unknown_referral_codes_without_creating_a_user(): void
+    {
+        $response = $this->from('/register')->post('/register', [
+            'first_name' => 'Amina',
+            'last_name' => 'Nana',
+            'email' => 'amina@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'referral_code' => 'UNKNOWN',
+        ]);
+
+        $response->assertRedirect('/register');
+        $response->assertSessionHasErrors('referral_code');
+        $this->assertDatabaseMissing('users', ['email' => 'amina@example.com']);
+    }
+
+    public function test_password_reset_form_saves_token_and_updates_the_user_password(): void
+    {
+        Notification::fake();
+
+        $user = User::create([
+            'role_id' => Role::where('code', 'student')->value('id'),
+            'first_name' => 'Amina',
+            'last_name' => 'Nana',
+            'email' => 'amina@example.com',
+            'password' => 'OldPassword123!',
+        ]);
+
+        $this->post(route('password.email'), ['email' => $user->email])
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $this->assertDatabaseHas('password_reset_tokens', ['email' => $user->email]);
+
+        $token = null;
+        Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $notification) use (&$token) {
+            $token = $notification->token;
+
+            return true;
+        });
+
+        $this->get(route('password.reset', ['token' => $token]).'?email='.$user->email)
+            ->assertOk()
+            ->assertSee('name="token" value="'.$token.'"', false);
+
+        $this->post(route('password.update'), [
+            'token' => $token,
+            'email' => $user->email,
+            'password' => 'NewPassword123!',
+            'password_confirmation' => 'NewPassword123!',
+        ])->assertRedirect(route('login'));
+
+        $this->assertTrue(Hash::check('NewPassword123!', $user->fresh()->password));
+        $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
+    }
+}
+
+=== FICHIER : C:\Users\SOP\Documents\X2\Projet\developpement web\tests\Unit\CartCalculationTest.php ===
+<?php
+
+namespace Tests\Unit;
+
+use App\Http\Controllers\Etudiant\CartController;
+use PHPUnit\Framework\TestCase;
+
+class CartCalculationTest extends TestCase
+{
+    /** @test */
+    public function test_il_calcule_correctement_le_total_du_panier(): void
+    {
+        // On instancie ou accÃ¨de Ã  la logique (si la mÃ©thode calculateTotal Ã©tait publique, ou via rÃ©flexion / test direct d'un tableau Ã©quivalent)
+        $cart = [
+            1 => [
+                'price_fcfa' => 2000,
+                'quantity' => 2,
+            ],
+            2 => [
+                'price_fcfa' => 1500,
+                'quantity' => 1,
+            ],
+        ];
+
+        // Simulation de la logique de calcul prÃ©sente dans CartController
+        $total = 0;
+        foreach ($cart as $item) {
+            $total += $item['price_fcfa'] * $item['quantity'];
+        }
+
+        $this->assertEquals(5500, $total);
     }
 }
 

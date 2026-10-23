@@ -86,8 +86,28 @@ class OrderSupervisionController extends Controller
             'status' => ['required', 'string', Rule::in(self::STATUSES)],
         ]);
 
-        // Enregistre l'état demandé sur la commande ciblée.
-        $order->update(['status' => $validated['status']]);
+        $newStatus = $validated['status'];
+
+        // Les points ne sont attribués qu'une seule fois, à la livraison ou la finalisation.
+        if (in_array($newStatus, ['delivered', 'completed'], true) && $order->loyalty_points_earned == 0) {
+            $loyaltyAccount = \App\Models\LoyaltyAccount::firstOrCreate(
+                ['user_id' => $order->user_id],
+                ['balance_points' => 0]
+            );
+
+            $loyaltyAccount->increment('balance_points', 1);
+            $order->update(['loyalty_points_earned' => 1]);
+
+            \App\Models\LoyaltyTransaction::create([
+                'user_id' => $order->user_id,
+                'order_id' => $order->id,
+                'type' => 'earn',
+                'points' => 1,
+                'description' => "Point de fidélité validé pour la commande {$order->order_number}",
+            ]);
+        }
+
+        $order->update(['status' => $newStatus]);
 
         return redirect()
             ->route('gerant.orders.index')

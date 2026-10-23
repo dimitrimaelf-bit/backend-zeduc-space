@@ -16,7 +16,8 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'role_id' => Role::factory()->student(),
+            // Réutilise le rôle étudiant s'il existe déjà, sinon le crée via la factory
+            'role_id' => Role::where('code', 'student')->value('id') ?? Role::factory()->student(),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'email' => fake()->unique()->safeEmail(),
@@ -34,29 +35,21 @@ class UserFactory extends Factory
 
     public function admin(): static
     {
-        return $this->state(fn () => [
-            'role_id' => Role::factory()->admin(),
-        ]);
+        return $this->state(fn () => ['role_id' => Role::factory()->admin()]);
     }
 
     public function employee(): static
     {
-        return $this->state(fn () => [
-            'role_id' => Role::factory()->employee(),
-        ]);
+        return $this->state(fn () => ['role_id' => Role::factory()->employee()]);
     }
 
     public function student(): static
     {
-        return $this->state(fn () => [
-            'role_id' => Role::factory()->student(),
-        ]);
+        return $this->state(fn () => ['role_id' => Role::factory()->student()]);
     }
 
     public function manager(): static
     {
-        return $this->state(fn () => [
-            'role_id' => Role::factory()->manager(),
-        ]);
+        return $this->state(fn () => ['role_id' => Role::factory()->manager()]);
     }
 }

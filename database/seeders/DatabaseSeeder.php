@@ -12,6 +12,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndSettingsSeeder::class,
             GerantUserSeeder::class,
+            MassDataSeeder::class,
+            OrderSeeder::class,
+            UpdateMenuImagesSeeder::class, // Met à jour les images des plats et boissons
         ]);
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
@@ -14,6 +15,8 @@ use App\Http\Controllers\Etudiant\OrderController;
 use App\Http\Controllers\Etudiant\LoyaltyController;
 use App\Http\Controllers\Etudiant\ReclamationController;
 use App\Http\Controllers\Etudiant\ParrainageController;
+use App\Http\Controllers\Etudiant\PaiementController;
+use App\Http\Controllers\Etudiant\EvenementController;
 
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\MenuCategoryController;
@@ -50,6 +53,11 @@ Route::get('/', function () {
 
 Route::post('/cookies/consent', [CookieController::class, 'store'])->name('cookies.consent');
 
+// Retour et notification CinetPay : hors "auth" (appel serveur à serveur, session non garantie).
+// GET et POST car CinetPay renvoie parfois en POST sur le return_url.
+Route::match(['get', 'post'], '/paiement/retour', [PaiementController::class, 'retourPaiement'])->name('cinetpay.return');
+Route::post('/paiement/notify', [PaiementController::class, 'notify'])->name('cinetpay.notify');
+
 // 1. ROUTES ACCESSIBLES UNIQUEMENT QUAND ON N'EST PAS CONNECTÉ
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
@@ -67,7 +75,19 @@ Route::middleware('guest')->group(function () {
 // 2. ROUTES ACCESSIBLES UNIQUEMENT QUAND ON EST CONNECTÉ
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Redirige chaque utilisateur vers son espace selon son rôle
+    Route::get('/dashboard', function () {
+        $user = Auth::user();
+        $code = $user->role?->code;
+
+        return match (true) {
+            $code === 'admin' => redirect()->route('admin.dashboard'),
+            $code === 'employee' => redirect()->route('employe.dashboard'),
+            (int) $user->role_id === 3 => redirect()->route('gerant.orders.index'),
+            default => redirect()->route('etudiant.accueil'),
+        };
+    })->name('dashboard');
 });
 
 // 3. ESPACE ÉTUDIANT
@@ -90,6 +110,9 @@ Route::middleware(['auth', 'role:student'])->prefix('etudiant')->name('etudiant.
     Route::get('/reclamations', [ReclamationController::class, 'index'])->name('reclamations.index');
     Route::get('/reclamations/nouveau', [ReclamationController::class, 'create'])->name('reclamations.create');
     Route::post('/reclamations/nouveau', [ReclamationController::class, 'store'])->name('reclamations.store');
+
+    // Événements et promotions
+    Route::get('/evenements', [EvenementController::class, 'index'])->name('evenements.index');
 
     // Parrainage
     Route::post('/parrainage/generer', [ParrainageController::class, 'generer'])->name('parrainage.generer');

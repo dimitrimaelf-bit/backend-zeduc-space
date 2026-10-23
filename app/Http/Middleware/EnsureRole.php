@@ -13,14 +13,8 @@ class EnsureRole
     {
         $user = $request->user();
 
-        if ($user === null) {
-            abort(403, 'Accès non autorisé.');
-        }
-
-        // Vérification que le compte est actif (ajout de la branche etudiant)
-        if (isset($user->is_active) && ! $user->is_active) {
-            abort(403, 'Compte désactivé.');
-        }
+        abort_if(! $user, 403, 'Accès non autorisé.');
+        abort_if(! $user->is_active, 403, 'Compte désactivé.');
 
         $hasRequiredRole = collect($roles)->contains(
             fn (string $role) => is_numeric($role)
@@ -28,9 +22,7 @@ class EnsureRole
                 : $user->role?->code === $role
         );
 
-        if (! $hasRequiredRole) {
-            abort(403, 'Accès non autorisé.');
-        }
+        abort_unless($hasRequiredRole, 403, "Vous n'avez pas accès à cette page.");
 
         return $next($request);
     }

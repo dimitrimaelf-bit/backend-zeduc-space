@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('promotions', function (Blueprint $table) {
             $table->id();
+            // Ajout de la colonne type pour distinguer promotion et événement
+            $table->enum("type", ["promotion", "event"])->default("promotion");
             $table->string("title", 150);
             $table->text("description")->nullable();
             $table->string("image_url", 500)->nullable();

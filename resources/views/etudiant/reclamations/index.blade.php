@@ -125,33 +125,46 @@
             <div class="miam-card" id="formClaimBox">
                 <h4 class="font-serif-italic mb-3" style="font-size: 1.35rem;">Nouvelle réclamation</h4>
 
-                <form action="{{ route('etudiant.reclamations.store') }}" method="POST">
-                    @csrf
-                    <div class="mb-3">
-                        <label for="order_id" class="form-label text-muted small mb-1">Commande concernée</label>
-                        <select name="order_id" id="order_id" class="form-select form-select-miam" required>
-                            @forelse($orders as $order)
-                                <option value="{{ $order->id }}">
-                                    Commande #{{ $order->order_number }} ({{ number_format($order->total_fcfa, 0, ',', ' ') }} F)
-                                </option>
-                            @empty
-                                <option value="" disabled selected>Aucune commande disponible</option>
-                            @endforelse
-                        </select>
-                    </div>
+    <form action="{{ route('etudiant.reclamations.store') }}" method="POST">
+        @csrf
+        
+        <!-- Sélection de la commande -->
+        <div class="mb-3">
+            <label for="order_id" class="form-label text-muted small mb-1">Commande concernée</label>
+            <select name="order_id" id="order_id" class="form-select form-select-miam" required>
+                <!-- On ne propose que les commandes livrées/terminées pour les réclamations -->
+                @forelse($orders->whereIn('status', ['delivered', 'completed']) as $order)
+                    <option value="{{ $order->id }}">
+                        Commande #{{ $order->order_number }} ({{ number_format($order->total_fcfa, 0, ',', ' ') }} F)
+                    </option>
+                @empty
+                    <option value="" disabled selected>Aucune commande disponible</option>
+                @endforelse
+            </select>
+        </div>
 
-                    <div class="mb-3">
-                        <label for="description" class="form-label text-muted small mb-1">Décris le problème</label>
-                        <textarea name="description" id="description" rows="3"
-                                  class="form-control form-control-miam"
-                                  placeholder="Plat reçu froid après 40 minutes d'attente." required>{{ old('description') }}</textarea>
-                    </div>
+        <!-- AJOUT DU CHAMP SUJET ICI -->
+        <div class="mb-3">
+            <label for="subject" class="form-label text-muted small mb-1">Sujet</label>
+            <input type="text" name="subject" id="subject" 
+                   class="form-control form-control-miam" 
+                   placeholder="Ex: Retard de livraison, Plat froid..." 
+                   value="{{ old('subject') }}" required>
+        </div>
 
-                    <button type="submit" class="btn-submit-claim" {{ $orders->isEmpty() ? 'disabled' : '' }}>
-                        Envoyer la réclamation
-                    </button>
-                </form>
-            </div>
+        <!-- Description du problème -->
+        <div class="mb-3">
+            <label for="description" class="form-label text-muted small mb-1">Décris le problème</label>
+            <textarea name="description" id="description" rows="3"
+                      class="form-control form-control-miam"
+                      placeholder="Plat reçu froid après 40 minutes d'attente." required>{{ old('description') }}</textarea>
+        </div>
+
+        <button type="submit" class="btn-submit-claim" {{ $orders->isEmpty() ? 'disabled' : '' }}>
+            Envoyer la réclamation
+        </button>
+    </form>
+</div>
 
             {{-- Carte : Suivi de mes réclamations --}}
             <div class="miam-card">

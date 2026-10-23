@@ -13,6 +13,7 @@ class ReclamationController extends Controller
 {
     /**
      * Liste toutes les réclamations de l'étudiant.
+     * Affiche TOUTES les commandes (y compris celles en attente) dans l'historique.
      */
     public function index()
     {
@@ -24,13 +25,13 @@ class ReclamationController extends Controller
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
-            
-        // Récupération des commandes pour la vue index / tableaux de réclamations
+
+        // Récupération de TOUTES les commandes de l'étudiant (même celles en attente)
+        // Cela permet d'afficher l'historique complet dans la vue
         $orders = Order::where('user_id', $user->id)
-            ->whereIn('status', ['delivered', 'completed'])
             ->orderBy('created_at', 'desc')
             ->get();
-            
+
         return view('etudiant.reclamations.index', compact('claims', 'orders', 'user', 'balance'));
     }
 

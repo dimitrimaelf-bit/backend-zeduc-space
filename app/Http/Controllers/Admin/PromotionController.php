@@ -31,6 +31,7 @@ class PromotionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'type' => ['sometimes', 'in:promotion,event'],
             'title' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
             'image_url' => ['nullable', 'url', 'max:500'],
@@ -58,6 +59,7 @@ class PromotionController extends Controller
     public function update(Request $request, Promotion $promotion)
     {
         $validated = $request->validate([
+            'type' => ['sometimes', 'in:promotion,event'],
             'title' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
             'image_url' => ['nullable', 'url', 'max:500'],

@@ -75,7 +75,7 @@
 
     {{-- Calculs de progression --}}
     @php
-        $targetPoints = 15;
+        $targetPoints = 5;
         $pointsRemaining = max(0, $targetPoints - ($balance % $targetPoints));
         $progressPercent = $balance >= $targetPoints
             ? 100

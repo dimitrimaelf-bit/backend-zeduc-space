@@ -38,7 +38,7 @@ class RegistrationTest extends TestCase
 
         $user = User::where('email', 'amina@example.com')->firstOrFail();
 
-        $response->assertRedirect(route('home'));
+        $response->assertRedirect(route('etudiant.accueil'));
         $this->assertAuthenticatedAs($user);
         $this->assertSame(Role::where('code', 'student')->value('id'), $user->role_id);
         $this->assertSame('Campus de Yansoki', $user->delivery_address);
@@ -59,7 +59,7 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'Password123!',
         ]);
 
-        $response->assertRedirect(route('home'));
+        $response->assertRedirect(route('etudiant.accueil'));
         $this->assertDatabaseHas('users', [
             'email' => 'public-admin@example.test',
             'role_id' => Role::where('code', 'student')->value('id'),
@@ -109,7 +109,7 @@ class RegistrationTest extends TestCase
 
         $referred = User::where('email', 'amina@example.com')->firstOrFail();
 
-        $response->assertRedirect(route('home'));
+        $response->assertRedirect(route('etudiant.accueil'));
         $this->assertNull($referred->phone);
         $this->assertDatabaseHas('referrals', [
             'referrer_user_id' => $referrer->id,
@@ -170,7 +170,7 @@ class RegistrationTest extends TestCase
             'email' => $user->email,
             'password' => 'NewPassword123!',
             'password_confirmation' => 'NewPassword123!',
-        ])->assertRedirect(route('login'));
+        ])->assertRedirect(route('etudiant.accueil'));
 
         $this->assertTrue(Hash::check('NewPassword123!', $user->fresh()->password));
         $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
